@@ -36,14 +36,14 @@ class ConnectionActorSpec extends SpecificationWithJUnit with Mockito {
       factory.newConnection throws new IOException
       actorRef ! Connect
       state mustEqual disconnected
-      there was one(spyActor).setTimer(actor.reconnectTimer, Connect, reconnectionDelay, repeat = true)
+      there was one(spyActor).setTimer(actor.reconnectTimer, Connect, reconnectionDelay, repeat = false)
     }
     "try to reconnect if can't create new channel" in new TestScope {
       connection.createChannel() throws new IOException
       actorRef.setState(Connected, Connected(connection))
       actorRef ! create
       state mustEqual disconnected
-      there was one(spyActor).setTimer(actor.reconnectTimer, Connect, reconnectionDelay, repeat = true)
+      there was one(spyActor).setTimer(actor.reconnectTimer, Connect, reconnectionDelay, repeat = false)
     }
     "attempt to connect on Connect message" in new TestScope {
       factory.newConnection throws new IOException thenReturns connection
@@ -63,7 +63,7 @@ class ConnectionActorSpec extends SpecificationWithJUnit with Mockito {
       factory.newConnection throws new IOException thenThrow new IOException thenReturns connection
       actor.shutdownCompleted(shutdownSignal())
       state mustEqual disconnected
-      there was one(spyActor).setTimer(actor.reconnectTimer, Connect, reconnectionDelay, repeat = true)
+      there was one(spyActor).setTimer(actor.reconnectTimer, Connect, reconnectionDelay, repeat = false)
     }
 
     "not reconnect on ShutdownSignalException from client" in new TestScope {

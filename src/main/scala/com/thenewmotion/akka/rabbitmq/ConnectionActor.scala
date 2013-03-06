@@ -56,7 +56,6 @@ class ConnectionActor(factory: ConnectionFactory,
       log.debug("can't create channel for {} in disconnected state", sender)
       stay()
   }
-
   when(Connected) {
     case Event(CreateChannel, Connected(connection)) =>
       safe(connection.createChannel()) match {
