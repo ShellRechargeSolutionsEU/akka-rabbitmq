@@ -17,14 +17,14 @@ object PublishSubscribe extends App {
   val exchange = "amq.fanout"
 
 
-  def publisher(channel: Channel) {
+  def setupPublisher(channel: Channel) {
     val queue = channel.queueDeclare().getQueue
     channel.queueBind(queue, exchange, "")
   }
-  connection ! Create(Props(new ChannelActor(publisher)), Some("publisher"))
+  connection ! Create(Props(new ChannelActor(setupPublisher)), Some("publisher"))
 
 
-  def subscriber(channel: Channel) {
+  def setupSubscriber(channel: Channel) {
     val queue = channel.queueDeclare().getQueue
     channel.queueBind(queue, exchange, "")
     val consumer = new DefaultConsumer(channel) {
@@ -34,7 +34,7 @@ object PublishSubscribe extends App {
     }
     channel.basicConsume(queue, true, consumer)
   }
-  connection ! Create(Props(new ChannelActor(subscriber)), Some("subscriber"))
+  connection ! Create(Props(new ChannelActor(setupSubscriber)), Some("subscriber"))
 
 
   Future {

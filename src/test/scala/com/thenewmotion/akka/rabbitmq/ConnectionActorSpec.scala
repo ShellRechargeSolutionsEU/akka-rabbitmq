@@ -141,8 +141,10 @@ class ConnectionActorSpec extends SpecificationWithJUnit with Mockito {
         spyActor.cancelTimer(name)
       }
 
-      override def setTimer(name: String, msg: Any, timeout: Duration, repeat: Boolean) =
+      override def setTimer(name: String, msg: Any, timeout: Duration, repeat: Boolean) = {
         spyActor.setTimer(name, msg, timeout, repeat)
+        stay()
+      }
 
       override def preStart() {
         spyActor.preStart()

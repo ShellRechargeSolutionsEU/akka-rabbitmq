@@ -4,7 +4,6 @@ import com.rabbitmq.client._
 import akka.actor.{ActorRef, Props, FSM}
 import akka.util.duration._
 import akka.util.Duration
-import scala.Some
 
 /**
  * @author Yaroslav Klymko
