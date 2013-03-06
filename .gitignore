@@ -1,0 +1,12 @@
+# Idea
+.idea/
+*.iml
+*.ipr
+*.iws
+.buildpath
+
+# Maven
+/target/
+
+# Mac
+.DS_Store
