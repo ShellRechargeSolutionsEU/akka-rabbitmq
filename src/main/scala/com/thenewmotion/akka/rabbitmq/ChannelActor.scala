@@ -41,7 +41,7 @@ class ChannelActor(setupChannel: Channel => Unit = _ => ())
             stay using InMemory(Queue(t: _*))
         }
       }
-      if (queue.nonEmpty) log.debug("processing queued messages {}", queue.mkString("\n", ", ", "\n"))
+      if (queue.nonEmpty) log.debug("processing queued messages {}", queue.mkString("\n", "\n", ""))
       loop(queue.toList)
 
     case Event(ChannelMessage(onChannel, dropIfNoChannel), InMemory(queue)) =>
