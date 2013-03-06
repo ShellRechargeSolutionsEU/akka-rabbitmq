@@ -42,7 +42,7 @@ class ConnectionActor(factory: ConnectionFactory,
     case Event(Connect, _) =>
       safe(setupConnection).getOrElse {
         log.error("can't connect to {}, retrying in {}", factory.uri, reconnectionDelay)
-        setTimer(reconnectTimer, Connect, reconnectionDelay, repeat = true)
+        setTimer(reconnectTimer, Connect, reconnectionDelay, repeat = false)
       }
 
     case Event(Create(props, name), _) =>
