@@ -85,6 +85,6 @@ object PublishSubscribe extends App {
     <dependency>
         <groupId>com.thenewmotion.akka</groupId>
         <artifactId>akka-rabbitmq_2.9.2</artifactId>
-        <version>0.0.1-SNAPSHOT</version>
+        <version>0.0.1</version>
     </dependency>
 ```
