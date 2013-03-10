@@ -8,11 +8,10 @@ import akka.util.Duration
 /**
  * @author Yaroslav Klymko
  */
-private[rabbitmq] object ConnectionActor {
-  sealed trait State
-
-  case object Disconnected extends State
-  case object Connected extends State
+object ConnectionActor {
+  private[rabbitmq] sealed trait State
+  private[rabbitmq] case object Disconnected extends State
+  private[rabbitmq] case object Connected extends State
 
   private[rabbitmq] sealed trait Data
   private[rabbitmq] case object NoConnection extends Data
