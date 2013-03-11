@@ -15,6 +15,119 @@ It gives you two actors `ConnectionActor` and `ChannelActor`
 * send stored messages as soon as new channel received
 * retrieve new channel if current is broken
 
+## Tutorial in comparisons
+### Create connection
+
+Default approach:
+```scala
+    val factory = new ConnectionFactory()
+    val connection: Connection = factory.newConnection()
+```
+
+Actor style:
+```scala
+    val factory = new ConnectionFactory()
+    val connectionActor: ActorRef = system.actorOf(Props(new ConnectionActor(factory)))
+```
+
+Let's name it:
+```scala
+    system.actorOf(Props(new ConnectionActor(factory)), "my-connection")
+```
+
+How often will it reconnect?
+```scala
+    import akka.util.duration._
+    system.actorOf(Props(new ConnectionActor(factory, reconnectionDelay = 10.seconds)), "my-connection")
+```
+
+### Create channel
+
+That's plain option:
+```scala
+    val channel: Channel = connection.createChannel()
+```
+
+But we can do better. Asynchronously:
+```scala
+    connectionActor ! Create(Props(new ChannelActor()))
+```
+
+Synchronously:
+```scala
+    val channelActor: ActorRef = connectionActor.createChannel(Props(new ChannelActor()))
+```
+
+Maybe give it a name:
+```scala
+    connectionActor.createChannel(Props(new ChannelActor()), Some("my-channel"))
+```
+
+What's about custom actor:
+```scala
+    connectionActor.createChannel(Props(new Actor {
+      def receive = {
+        case channel: Channel =>
+      }
+    }))
+```
+
+### Setup channel
+```scala
+    channel.queueDeclare("queue_name", false, false, false, null)
+```
+
+Actor style:
+```scala
+    // this function will be called each time new channel received
+    def setupChannel(channel: Channel) {
+      channel.queueDeclare("queue_name", false, false, false, null)
+    }
+    val channelActor: ActorRef = connectionActor.createChannel(Props(new ChannelActor(setupChannel)))
+```
+
+### Use channel
+```scala
+    channel.basicPublish("", "queue_name", null, "Hello world".getBytes)
+```
+
+Using our `channelActor`:
+```scala
+    def publish(channel: Channel) {
+      channel.basicPublish("", "queue_name", null, "Hello world".getBytes)
+    }
+    channelActor ! ChannelMessage(publish)
+```
+
+But I don't want to lose messages when connection is lost:
+```scala
+    channelActor ! ChannelMessage(publish, dropIfNoChannel = false)
+```
+
+### Close channel
+```scala
+    channel.close()
+```
+VS
+```scala
+    system stop channelActor
+```
+
+### Close connection
+
+```scala
+    connection.close()
+```
+VS
+```scala
+    system stop connectionActor // will close all channels associated with this connection
+```
+
+You can shutdown `ActorSystem`, this will close all connections as well as channels:
+```scala
+    system.shutdown()
+```
+
 ## Examples:
 
 ### Publish/Subscribe

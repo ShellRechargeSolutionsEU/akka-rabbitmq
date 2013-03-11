@@ -22,7 +22,7 @@ object ConnectionActor {
   case object Connect extends Message
 
   case class Create(props: Props, name: Option[String] = None)
-  case class Created(actor: ActorRef)
+  case class Created(channel: ActorRef)
 }
 
 
