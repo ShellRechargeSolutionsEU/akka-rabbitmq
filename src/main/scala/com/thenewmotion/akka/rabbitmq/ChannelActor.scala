@@ -22,7 +22,7 @@ object ChannelActor {
 }
 
 
-class ChannelActor(setupChannel: Channel => Unit = _ => ())
+class ChannelActor(setupChannel: Channel => Any = _ => ())
   extends RabbitMqActor
   with FSM[ChannelActor.State, ChannelActor.Data] {
   import ChannelActor._
@@ -74,8 +74,8 @@ class ChannelActor(setupChannel: Channel => Unit = _ => ())
       }
   }
   onTransition {
-    case Disconnected -> Connected => log.info("connected")
-    case Connected -> Disconnected => log.warning("disconnected")
+    case Disconnected -> Connected => log.info("{} connected", self.path)
+    case Connected -> Disconnected => log.warning("{} disconnected", self.path)
   }
   onTermination {
     case StopEvent(_, Connected, Connected(channel)) =>
