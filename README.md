@@ -55,6 +55,8 @@ But we can do better. Asynchronously:
 
 Synchronously:
 ```scala
+    import com.thenewmotion.akka.rabbitmq.reachConnectionActor
+
     val channelActor: ActorRef = connectionActor.createChannel(Props(new ChannelActor()))
 ```
 
