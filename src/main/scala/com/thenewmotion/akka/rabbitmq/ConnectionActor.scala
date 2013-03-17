@@ -2,8 +2,7 @@ package com.thenewmotion.akka.rabbitmq
 
 import com.rabbitmq.client._
 import akka.actor.{ActorRef, Props, FSM}
-import akka.util.duration._
-import akka.util.Duration
+import concurrent.duration._
 
 /**
  * @author Yaroslav Klymko
@@ -27,7 +26,7 @@ object ConnectionActor {
 
 
 class ConnectionActor(factory: ConnectionFactory,
-                      reconnectionDelay: Duration = 10.seconds,
+                      reconnectionDelay: FiniteDuration = 10.seconds,
                       setup: Connection => Any = _ => ())
   extends RabbitMqActor
   with FSM[ConnectionActor.State, ConnectionActor.Data] {

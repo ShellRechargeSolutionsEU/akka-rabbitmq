@@ -37,7 +37,7 @@ Let's name it:
 
 How often will it reconnect?
 ```scala
-    import akka.util.duration._
+    import concurrent.duration._
     system.actorOf(Props(new ConnectionActor(factory, reconnectionDelay = 10.seconds)), "my-connection")
 ```
 
@@ -199,7 +199,7 @@ object PublishSubscribe extends App {
 ```xml
     <dependency>
         <groupId>com.thenewmotion.akka</groupId>
-        <artifactId>akka-rabbitmq_2.9.2</artifactId>
-        <version>0.0.1</version>
+        <artifactId>akka-rabbitmq_2.10</artifactId>
+        <version>0.0.2-SNAPSHOT</version>
     </dependency>
 ```

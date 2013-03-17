@@ -23,7 +23,7 @@ class TutorialInComparisons(implicit system: ActorSystem) {
 
     system.actorOf(Props(new ConnectionActor(factory)), "my-connection")
 
-    import akka.util.duration._
+    import concurrent.duration._
     system.actorOf(Props(new ConnectionActor(factory, reconnectionDelay = 10.seconds)), "my-connection")
 
     connectionActor

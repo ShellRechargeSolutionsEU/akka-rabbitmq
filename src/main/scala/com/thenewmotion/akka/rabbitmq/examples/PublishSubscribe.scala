@@ -3,9 +3,10 @@ package examples
 
 import akka.actor.{Props, ActorSystem}
 import com.rabbitmq.client._
-import akka.dispatch.Future
 import ConnectionActor.Create
 import ChannelActor.ChannelMessage
+import concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
  * @author Yaroslav Klymko

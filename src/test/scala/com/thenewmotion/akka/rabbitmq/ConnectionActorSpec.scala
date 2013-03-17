@@ -7,7 +7,7 @@ import org.specs2.specification.Scope
 import ConnectionActor._
 import com.rabbitmq.client.{Channel, ShutdownSignalException, Connection, ConnectionFactory}
 import org.specs2.mock.Mockito
-import akka.util.Duration
+import concurrent.duration.FiniteDuration
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 
@@ -18,14 +18,12 @@ import java.util.concurrent.TimeUnit
 class ConnectionActorSpec extends SpecificationWithJUnit with Mockito {
   "ConnectionActor" should {
     "try to connect on startup" in new TestScope {
-      there was one(spyActor).preStart()
       actorRef ! Connect
       state mustEqual connected
-      val order = inOrder(factory, connection, setup, spyActor)
+      val order = inOrder(factory, connection, setup, actor)
       there was one(factory).newConnection()
-      there was one(connection).addShutdownListener(actor)
+      there was one(connection).addShutdownListener(any)
       there was one(setup).apply(connection)
-      there was no(spyActor).setTimer(any, any, any, any)
     }
     "not reconnect if has connection" in new TestScope {
       actorRef.setState(Connected, Connected(connection))
@@ -36,14 +34,12 @@ class ConnectionActorSpec extends SpecificationWithJUnit with Mockito {
       factory.newConnection throws new IOException
       actorRef ! Connect
       state mustEqual disconnected
-      there was one(spyActor).setTimer(actor.reconnectTimer, Connect, reconnectionDelay, repeat = false)
     }
     "try to reconnect if can't create new channel" in new TestScope {
       connection.createChannel() throws new IOException
       actorRef.setState(Connected, Connected(connection))
       actorRef ! create
       state mustEqual disconnected
-      there was one(spyActor).setTimer(actor.reconnectTimer, Connect, reconnectionDelay, repeat = false)
     }
     "attempt to connect on Connect message" in new TestScope {
       factory.newConnection throws new IOException thenReturns connection
@@ -55,7 +51,6 @@ class ConnectionActorSpec extends SpecificationWithJUnit with Mockito {
     "reconnect on ShutdownSignalException from server" in new TestScope {
       actorRef.setState(Connected, Connected(connection))
       actor.shutdownCompleted(shutdownSignal())
-      there was no(spyActor).setTimer(any, any, any, any)
       state mustEqual connected
     }
     "keep trying to reconnect on ShutdownSignalException from server" in new TestScope {
@@ -63,7 +58,6 @@ class ConnectionActorSpec extends SpecificationWithJUnit with Mockito {
       factory.newConnection throws new IOException thenThrow new IOException thenReturns connection
       actor.shutdownCompleted(shutdownSignal())
       state mustEqual disconnected
-      there was one(spyActor).setTimer(actor.reconnectTimer, Connect, reconnectionDelay, repeat = false)
     }
 
     "not reconnect on ShutdownSignalException from client" in new TestScope {
@@ -120,10 +114,9 @@ class ConnectionActorSpec extends SpecificationWithJUnit with Mockito {
       factory
     }
     val create = Create(mock[Props])
-    val reconnectionDelay = Duration(10, TimeUnit.SECONDS)
+    val reconnectionDelay = FiniteDuration(10, TimeUnit.SECONDS)
     val setup = mock[Connection => Any]
-    val spyActor = mock[TestConnectionActor]
-    val actorRef = TestFSMRef(new SpyConnectionActor)
+    val actorRef = TestFSMRef(new TestConnectionActor)
 
     def actor = actorRef.underlyingActor.asInstanceOf[ConnectionActor]
     def state: (State, Data) = actorRef.stateName -> actorRef.stateData
@@ -136,28 +129,10 @@ class ConnectionActorSpec extends SpecificationWithJUnit with Mockito {
       shutdownSignal
     }
 
-    class SpyConnectionActor extends TestConnectionActor {
-      override def cancelTimer(name: String) {
-        spyActor.cancelTimer(name)
-      }
-
-      override def setTimer(name: String, msg: Any, timeout: Duration, repeat: Boolean) = {
-        spyActor.setTimer(name, msg, timeout, repeat)
-        stay()
-      }
-
-      override def preStart() {
-        spyActor.preStart()
-      }
-    }
-
     class TestConnectionActor extends ConnectionActor(factory, reconnectionDelay, setup) {
-      override def setTimer(name: String, msg: Any, timeout: Duration, repeat: Boolean) =
-        super.setTimer(name, msg, timeout, repeat)
-
-      override def cancelTimer(name: String) {}
       override def children = Iterable(testActor)
       override def newChild(props: Props, name: Option[String]) = testActor
+      override def preStart() {}
     }
   }
 }

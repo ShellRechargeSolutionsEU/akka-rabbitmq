@@ -4,12 +4,12 @@
 
     <parent>
         <groupId>ua.t3hnar</groupId>
-        <artifactId>scala-parent-pom</artifactId>
-        <version>1.1</version>
+        <artifactId>scala-parent-pom_2.10</artifactId>
+        <version>2.1-SNAPSHOT</version>
     </parent>
 
     <groupId>com.thenewmotion.akka</groupId>
-    <artifactId>akka-rabbitmq_2.9.2</artifactId>
+    <artifactId>akka-rabbitmq_2.10</artifactId>
     <version>0.0.2-SNAPSHOT</version>
 
     <url>https://github.com/thenewmotion/akka-rabbitmq</url>
@@ -22,7 +22,7 @@
     </licenses>
 
     <properties>
-        <akka.version>2.0.5</akka.version>
+        <akka.version>2.1.2</akka.version>
     </properties>
 
     <developers>
@@ -40,12 +40,12 @@
         </dependency>
         <dependency>
             <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-actor</artifactId>
+            <artifactId>akka-actor_${scala.version}</artifactId>
             <version>${akka.version}</version>
         </dependency>
         <dependency>
             <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-testkit</artifactId>
+            <artifactId>akka-testkit_${scala.version}</artifactId>
             <version>${akka.version}</version>
             <scope>test</scope>
         </dependency>

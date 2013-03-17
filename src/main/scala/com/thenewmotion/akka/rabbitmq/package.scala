@@ -4,7 +4,8 @@ import com.rabbitmq.client.ConnectionFactory
 import akka.actor.{Props, ActorRef}
 import rabbitmq.ConnectionActor.{Created, Create}
 import akka.util.Timeout
-import akka.util.duration._
+import concurrent.duration._
+import concurrent.Await
 
 /**
  * @author Yaroslav Klymko
@@ -17,7 +18,6 @@ package object rabbitmq {
   implicit def reachConnectionActor(connection: ActorRef) = new {
     def createChannel(props: Props, name: Option[String] = None)
                      (implicit timeout: Timeout = Timeout(2 seconds)): ActorRef = {
-      import akka.dispatch.Await
       import akka.pattern.ask
       val future = connection ? Create(props, name)
       Await.result(future, timeout.duration).asInstanceOf[Created].channel
