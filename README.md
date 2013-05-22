@@ -19,7 +19,7 @@ It gives you two actors `ConnectionActor` and `ChannelActor`
 Before start, you need to add import statement
 
 ```scala
-    com.thenewmotion.akka.rabbitmq._
+    import com.thenewmotion.akka.rabbitmq._
 ```
 
 ### Create connection
