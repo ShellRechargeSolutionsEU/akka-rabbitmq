@@ -2,11 +2,8 @@ package com.thenewmotion.akka.rabbitmq
 package examples
 
 import akka.actor.{Props, ActorSystem}
-import com.rabbitmq.client._
-import ConnectionActor.Create
-import ChannelActor.ChannelMessage
 import concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
+import concurrent.ExecutionContext.Implicits.global
 
 /**
  * @author Yaroslav Klymko
@@ -22,20 +19,20 @@ object PublishSubscribe extends App {
     val queue = channel.queueDeclare().getQueue
     channel.queueBind(queue, exchange, "")
   }
-  connection ! Create(Props(new ChannelActor(setupPublisher)), Some("publisher"))
+  connection ! CreateChannel(Props(new ChannelActor(setupPublisher)), Some("publisher"))
 
 
   def setupSubscriber(channel: Channel) {
     val queue = channel.queueDeclare().getQueue
     channel.queueBind(queue, exchange, "")
     val consumer = new DefaultConsumer(channel) {
-      override def handleDelivery(consumerTag: String, envelope: Envelope, properties: AMQP.BasicProperties, body: Array[Byte]) {
+      override def handleDelivery(consumerTag: String, envelope: Envelope, properties: BasicProperties, body: Array[Byte]) {
         println("received: " + fromBytes(body))
       }
     }
     channel.basicConsume(queue, true, consumer)
   }
-  connection ! Create(Props(new ChannelActor(setupSubscriber)), Some("subscriber"))
+  connection ! CreateChannel(Props(new ChannelActor(setupSubscriber)), Some("subscriber"))
 
 
   Future {

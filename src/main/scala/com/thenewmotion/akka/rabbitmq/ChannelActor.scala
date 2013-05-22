@@ -1,15 +1,13 @@
 package com.thenewmotion.akka.rabbitmq
 
 import akka.actor.FSM
-import com.rabbitmq.client._
 import collection.immutable.Queue
-import com.thenewmotion.akka.rabbitmq.ConnectionActor.CreateChannel
+import ConnectionActor.ProvideChannel
 
 /**
  * @author Yaroslav Klymko
  */
 object ChannelActor {
-  type OnChannel = Channel => Any
   private[rabbitmq] sealed trait State
   private[rabbitmq] case object Disconnected extends State
   private[rabbitmq] case object Connected extends State
@@ -18,7 +16,10 @@ object ChannelActor {
   private[rabbitmq] case class InMemory(queue: Queue[OnChannel] = Queue()) extends Data
   private[rabbitmq] case class Connected(channel: Channel) extends Data
 
-  case class ChannelMessage(onChannel: OnChannel, dropIfNoChannel: Boolean = true)
+  @deprecated("Use com.thenewmotion.akka.rabbitmq.ChannelMessage instead", "0.3")
+  type ChannelMessage = com.thenewmotion.akka.rabbitmq.ChannelMessage
+  @deprecated("Use com.thenewmotion.akka.rabbitmq.ChannelMessage instead", "0.3")
+  val ChannelMessage = com.thenewmotion.akka.rabbitmq.ChannelMessage
 }
 
 
@@ -99,7 +100,7 @@ class ChannelActor(setupChannel: Channel => Any = _ => ())
 
   def askForChannel() {
     log.debug("asking for new channel")
-    connectionActor ! CreateChannel
+    connectionActor ! ProvideChannel
   }
 
   def connectionActor = context.parent

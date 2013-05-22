@@ -1,15 +1,15 @@
 package com.thenewmotion.akka.rabbitmq
 
 import org.specs2.mutable.SpecificationWithJUnit
+import org.specs2.specification.Scope
+import org.specs2.mock.Mockito
 import akka.testkit.{TestFSMRef, TestKit}
 import akka.actor.ActorSystem
-import org.specs2.specification.Scope
 import ChannelActor._
-import org.specs2.mock.Mockito
-import com.rabbitmq.client.{ShutdownSignalException, Channel}
+import com.rabbitmq.client.ShutdownSignalException
 import collection.immutable.Queue
 import java.io.IOException
-import com.thenewmotion.akka.rabbitmq.ConnectionActor.CreateChannel
+import ConnectionActor.ProvideChannel
 
 /**
  * @author Yaroslav Klymko
@@ -41,7 +41,7 @@ class ChannelActorSpec extends SpecificationWithJUnit with Mockito {
       actorRef.setState(Connected, Connected(channel))
       actorRef ! ChannelMessage(onChannelFailure)
       state mustEqual disconnected()
-      expectMsg(CreateChannel)
+      expectMsg(ProvideChannel)
     }
     "collect channel message if no channel" in new TestScope {
       actorRef ! ChannelMessage(onChannel, dropIfNoChannel = false)
@@ -55,19 +55,19 @@ class ChannelActorSpec extends SpecificationWithJUnit with Mockito {
       actorRef.setState(Connected, Connected(channel))
       actorRef ! AmqpShutdownSignal(shutdownSignal)
       state mustEqual disconnected()
-      expectMsg(CreateChannel)
+      expectMsg(ProvideChannel)
     }
     "leave channel on ShutdownSignal" in new TestScope {
       actorRef.setState(Connected, Connected(channel))
       actor.shutdownCompleted(shutdownSignal)
       state mustEqual disconnected()
-      expectMsg(CreateChannel)
+      expectMsg(ProvideChannel)
     }
     "aks for channel on ShutdownSignal" in new TestScope {
       actorRef.setState(Connected, Connected(channel))
       actor.shutdownCompleted(shutdownSignal)
       state mustEqual disconnected()
-      expectMsg(CreateChannel)
+      expectMsg(ProvideChannel)
     }
     "process queued channel messages when channel received" in new TestScope {
       actorRef.setState(Disconnected, InMemory(Queue(onChannel, onChannel)))

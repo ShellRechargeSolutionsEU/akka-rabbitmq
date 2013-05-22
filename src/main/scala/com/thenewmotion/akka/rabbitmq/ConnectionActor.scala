@@ -1,7 +1,6 @@
 package com.thenewmotion.akka.rabbitmq
 
-import com.rabbitmq.client._
-import akka.actor.{ActorRef, Props, FSM}
+import akka.actor.{Props, FSM}
 import concurrent.duration._
 
 /**
@@ -17,11 +16,18 @@ object ConnectionActor {
   private[rabbitmq] case class Connected(conn: Connection) extends Data
 
   sealed trait Message
-  case object CreateChannel extends Message
+  case object ProvideChannel extends Message
   case object Connect extends Message
 
-  case class Create(props: Props, name: Option[String] = None)
-  case class Created(channel: ActorRef)
+  @deprecated("Use com.thenewmotion.akka.rabbitmq.ConnectionCreated instead", "0.3")
+  type Created = ChannelCreated
+  @deprecated("Use com.thenewmotion.akka.rabbitmq.ConnectionCreated instead", "0.3")
+  val Created = ChannelCreated
+
+  @deprecated("Use com.thenewmotion.akka.rabbitmq.CreateConnection instead", "0.3")
+  type Create = CreateChannel
+  @deprecated("Use com.thenewmotion.akka.rabbitmq.CreateConnection instead", "0.3")
+  val Create = CreateChannel
 }
 
 
@@ -43,19 +49,19 @@ class ConnectionActor(factory: ConnectionFactory,
         setTimer(reconnectTimer, Connect, reconnectionDelay, repeat = false)
       }
 
-    case Event(Create(props, name), _) =>
+    case Event(CreateChannel(props, name), _) =>
       val child = newChild(props, name)
       log.debug("creating child {} in disconnected state", child)
-      stay replying Created(child)
+      stay replying ChannelCreated(child)
 
     case Event(_: AmqpShutdownSignal, _) => stay()
 
-    case Event(CreateChannel, _) =>
+    case Event(ProvideChannel, _) =>
       log.debug("can't create channel for {} in disconnected state", sender)
       stay()
   }
   when(Connected) {
-    case Event(CreateChannel, Connected(connection)) =>
+    case Event(ProvideChannel, Connected(connection)) =>
       safe(connection.createChannel()) match {
         case Some(channel) => stay replying channel
         case None =>
@@ -63,18 +69,18 @@ class ConnectionActor(factory: ConnectionFactory,
           goto(Disconnected) using NoConnection
       }
 
-    case Event(Create(props, name), Connected(connection)) =>
+    case Event(CreateChannel(props, name), Connected(connection)) =>
       safe(connection.createChannel()) match {
         case Some(channel) =>
           val child = newChild(props, name)
           log.debug("creating child {} with channel {}", child, channel)
           child ! channel
-          stay replying Created(child)
+          stay replying ChannelCreated(child)
         case None =>
           val child = newChild(props, name)
           reconnect(connection)
           log.debug("creating child {} without channel", child)
-          goto(Disconnected) using NoConnection replying Created(child)
+          goto(Disconnected) using NoConnection replying ChannelCreated(child)
       }
 
     case Event(AmqpShutdownSignal(cause), Connected(connection)) =>

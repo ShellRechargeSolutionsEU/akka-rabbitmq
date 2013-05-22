@@ -5,7 +5,7 @@ import akka.testkit.{ImplicitSender, TestFSMRef, TestKit}
 import akka.actor.{Props, ActorSystem}
 import org.specs2.specification.Scope
 import ConnectionActor._
-import com.rabbitmq.client.{Channel, ShutdownSignalException, Connection, ConnectionFactory}
+import com.rabbitmq.client.ShutdownSignalException
 import org.specs2.mock.Mockito
 import concurrent.duration.FiniteDuration
 import java.io.IOException
@@ -70,19 +70,19 @@ class ConnectionActorSpec extends SpecificationWithJUnit with Mockito {
       actorRef.setState(Connected, Connected(connection))
       actorRef ! create
       expectMsg(channel)
-      expectMsg(Created(testActor))
+      expectMsg(ChannelCreated(testActor))
     }
     "create children actor without channel if failed to create new channel" in new TestScope {
       connection.createChannel() throws new IOException
       actorRef.setState(Connected, Connected(connection))
       actorRef ! create
       expectMsg(ParentShutdownSignal)
-      expectMsg(Created(testActor))
+      expectMsg(ChannelCreated(testActor))
       state mustEqual disconnected
     }
     "create children actor without channel" in new TestScope {
       actorRef ! create
-      expectMsg(Created(testActor))
+      expectMsg(ChannelCreated(testActor))
     }
     "notify children if connection lost" in new TestScope {
       actorRef.setState(Connected, Connected(connection))
@@ -113,7 +113,7 @@ class ConnectionActorSpec extends SpecificationWithJUnit with Mockito {
       factory.newConnection() returns connection
       factory
     }
-    val create = Create(mock[Props])
+    val create = CreateChannel(mock[Props])
     val reconnectionDelay = FiniteDuration(10, TimeUnit.SECONDS)
     val setup = mock[Connection => Any]
     val actorRef = TestFSMRef(new TestConnectionActor)

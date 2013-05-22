@@ -1,10 +1,7 @@
 package com.thenewmotion.akka.rabbitmq
 package examples
 
-import com.rabbitmq.client.{Connection, ConnectionFactory, Channel}
 import akka.actor.{Actor, ActorRef, Props, ActorSystem}
-import com.thenewmotion.akka.rabbitmq.ConnectionActor.Create
-import com.thenewmotion.akka.rabbitmq.ChannelActor.ChannelMessage
 
 /**
  * @author Yaroslav Klymko
@@ -39,7 +36,7 @@ class TutorialInComparisons(implicit system: ActorSystem) {
 
     connectionActor.createChannel(Props(new ChannelActor()), Some("my-channel"))
 
-    connectionActor ! Create(Props(new ChannelActor()))
+    connectionActor ! CreateChannel(Props(new ChannelActor()))
 
     connectionActor.createChannel(Props(new Actor {
       def receive = {

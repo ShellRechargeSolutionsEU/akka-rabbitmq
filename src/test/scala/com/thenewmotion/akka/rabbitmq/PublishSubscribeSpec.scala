@@ -1,10 +1,7 @@
 package com.thenewmotion.akka.rabbitmq
 
 import org.specs2.mutable.SpecificationWithJUnit
-import com.thenewmotion.akka.rabbitmq.ChannelActor.ChannelMessage
 import akka.actor.{Props, ActorSystem}
-import com.rabbitmq.client._
-import com.thenewmotion.akka.rabbitmq.ConnectionActor.{Created, Create}
 import akka.testkit.{ImplicitSender, TestKit}
 import org.specs2.specification.Scope
 
@@ -24,23 +21,23 @@ class PublishSubscribeSpec extends SpecificationWithJUnit {
         channel.queueBind(queue, exchange, "")
       }
 
-      connection ! Create(Props(new ChannelActor(setupPublisher)), Some("publisher"))
-      val Created(publisher) = expectMsgType[Created]
+      connection ! CreateChannel(Props(new ChannelActor(setupPublisher)), Some("publisher"))
+      val ChannelCreated(publisher) = expectMsgType[ChannelCreated]
 
 
       def setupSubscriber(channel: Channel) {
         val queue = channel.queueDeclare().getQueue
         channel.queueBind(queue, exchange, "")
         val consumer = new DefaultConsumer(channel) {
-          override def handleDelivery(consumerTag: String, envelope: Envelope, properties: AMQP.BasicProperties, body: Array[Byte]) {
+          override def handleDelivery(consumerTag: String, envelope: Envelope, properties: BasicProperties, body: Array[Byte]) {
             testActor ! fromBytes(body)
           }
         }
         channel.basicConsume(queue, true, consumer)
       }
 
-      connection ! Create(Props(new ChannelActor(setupSubscriber)), Some("subscriber"))
-      val Created(subscriber) = expectMsgType[Created]
+      connection ! CreateChannel(Props(new ChannelActor(setupSubscriber)), Some("subscriber"))
+      val ChannelCreated(subscriber) = expectMsgType[ChannelCreated]
 
 
       val msgs = (0L to 100)

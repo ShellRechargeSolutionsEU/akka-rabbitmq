@@ -16,6 +16,12 @@ It gives you two actors `ConnectionActor` and `ChannelActor`
 * retrieve new channel if current is broken
 
 ## Tutorial in comparisons
+Before start, you need to add import statement
+
+```scala
+    com.thenewmotion.akka.rabbitmq._
+```
+
 ### Create connection
 
 Default approach:
@@ -50,7 +56,7 @@ That's plain option:
 
 But we can do better. Asynchronously:
 ```scala
-    connectionActor ! Create(Props(new ChannelActor()))
+    connectionActor ! CreateChannel(Props(new ChannelActor()))
 ```
 
 Synchronously:
@@ -148,20 +154,20 @@ object PublishSubscribe extends App {
     val queue = channel.queueDeclare().getQueue
     channel.queueBind(queue, exchange, "")
   }
-  connection ! Create(Props(new ChannelActor(setupPublisher)), Some("publisher"))
+  connection ! CreateChannel(Props(new ChannelActor(setupPublisher)), Some("publisher"))
 
 
   def setupSubscriber(channel: Channel) {
     val queue = channel.queueDeclare().getQueue
     channel.queueBind(queue, exchange, "")
     val consumer = new DefaultConsumer(channel) {
-      override def handleDelivery(consumerTag: String, envelope: Envelope, properties: AMQP.BasicProperties, body: Array[Byte]) {
+      override def handleDelivery(consumerTag: String, envelope: Envelope, properties: BasicProperties, body: Array[Byte]) {
         println("received: " + fromBytes(body))
       }
     }
     channel.basicConsume(queue, true, consumer)
   }
-  connection ! Create(Props(new ChannelActor(setupSubscriber)), Some("subscriber"))
+  connection ! CreateChannel(Props(new ChannelActor(setupSubscriber)), Some("subscriber"))
 
 
   Future {
