@@ -4,7 +4,7 @@ import org.specs2.mutable.SpecificationWithJUnit
 import org.specs2.specification.Scope
 import org.specs2.mock.Mockito
 import akka.testkit.{TestFSMRef, TestKit}
-import akka.actor.ActorSystem
+import akka.actor.{ActorRef, ActorSystem}
 import ChannelActor._
 import com.rabbitmq.client.ShutdownSignalException
 import collection.immutable.Queue
@@ -19,7 +19,7 @@ class ChannelActorSpec extends SpecificationWithJUnit with Mockito {
     "setup channel when channel received" in new TestScope {
       actorRef ! channel
       state mustEqual connected()
-      there was one(setupChannel).apply(channel)
+      there was one(setupChannel).apply(channel, actorRef)
       there was one(channel).addShutdownListener(actor)
     }
     "close old channel if new one received" in new TestScope {
@@ -28,7 +28,7 @@ class ChannelActorSpec extends SpecificationWithJUnit with Mockito {
       actorRef ! newChannel
       there was one(channel).close()
       state mustEqual connected(newChannel)
-      there was one(setupChannel).apply(newChannel)
+      there was one(setupChannel).apply(newChannel, actorRef)
       there was one(newChannel).addShutdownListener(actor)
     }
     "process message if has channel" in new TestScope {
@@ -85,7 +85,7 @@ class ChannelActorSpec extends SpecificationWithJUnit with Mockito {
   }
 
   private abstract class TestScope extends TestKit(ActorSystem()) with Scope {
-    val setupChannel = mock[Channel => Unit]
+    val setupChannel = mock[(Channel, ActorRef) => Unit]
     val onChannel = mock[OnChannel]
     val channel = {
       val channel = mock[Channel]

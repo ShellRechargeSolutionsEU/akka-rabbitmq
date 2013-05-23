@@ -88,7 +88,7 @@ What's about custom actor:
 Actor style:
 ```scala
     // this function will be called each time new channel received
-    def setupChannel(channel: Channel) {
+    def setupChannel(channel: Channel, self: ActorRef) {
       channel.queueDeclare("queue_name", false, false, false, null)
     }
     val channelActor: ActorRef = connectionActor.createChannel(Props(new ChannelActor(setupChannel)))
@@ -150,14 +150,14 @@ object PublishSubscribe extends App {
   val exchange = "amq.fanout"
 
 
-  def setupPublisher(channel: Channel) {
+  def setupPublisher(channel: Channel, self: ActorRef) {
     val queue = channel.queueDeclare().getQueue
     channel.queueBind(queue, exchange, "")
   }
   connection ! CreateChannel(Props(new ChannelActor(setupPublisher)), Some("publisher"))
 
 
-  def setupSubscriber(channel: Channel) {
+  def setupSubscriber(channel: Channel, self: ActorRef) {
     val queue = channel.queueDeclare().getQueue
     channel.queueBind(queue, exchange, "")
     val consumer = new DefaultConsumer(channel) {

@@ -1,6 +1,6 @@
 package com.thenewmotion.akka.rabbitmq
 
-import akka.actor.{Props, FSM}
+import akka.actor.{ActorRef, Props, FSM}
 import concurrent.duration._
 
 /**
@@ -33,7 +33,7 @@ object ConnectionActor {
 
 class ConnectionActor(factory: ConnectionFactory,
                       reconnectionDelay: FiniteDuration = 10.seconds,
-                      setup: Connection => Any = _ => ())
+                      setupConnection: (Connection, ActorRef) => Any = (_, _) => ())
   extends RabbitMqActor
   with FSM[ConnectionActor.State, ConnectionActor.Data] {
   import ConnectionActor._
@@ -44,7 +44,7 @@ class ConnectionActor(factory: ConnectionFactory,
 
   when(Disconnected) {
     case Event(Connect, _) =>
-      safe(setupConnection).getOrElse {
+      safe(setup).getOrElse {
         log.error("can't connect to {}, retrying in {}", factory.uri, reconnectionDelay)
         setTimer(reconnectTimer, Connect, reconnectionDelay, repeat = false)
       }
@@ -105,12 +105,12 @@ class ConnectionActor(factory: ConnectionFactory,
     children.foreach(_ ! ParentShutdownSignal)
   }
 
-  def setupConnection = {
+  def setup = {
     val connection = factory.newConnection()
     log.debug("setting up new connection {}", connection)
     connection.addShutdownListener(this)
     cancelTimer(reconnectTimer)
-    setup(connection)
+    setupConnection(connection, self)
     children.foreach(_ ! connection.createChannel())
     goto(Connected) using Connected(connection)
   }

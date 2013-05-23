@@ -1,6 +1,6 @@
 package com.thenewmotion.akka.rabbitmq
 
-import akka.actor.FSM
+import akka.actor.{ActorRef, FSM}
 import collection.immutable.Queue
 import ConnectionActor.ProvideChannel
 
@@ -23,9 +23,10 @@ object ChannelActor {
 }
 
 
-class ChannelActor(setupChannel: Channel => Any = _ => ())
+class ChannelActor(setupChannel: (Channel, ActorRef) => Any = (_, _) => ())
   extends RabbitMqActor
   with FSM[ChannelActor.State, ChannelActor.Data] {
+
   import ChannelActor._
 
   startWith(Disconnected, InMemory())
@@ -88,7 +89,7 @@ class ChannelActor(setupChannel: Channel => Any = _ => ())
   def setup(channel: Channel): Channel = {
     log.debug("setting up new channel {}", channel)
     channel.addShutdownListener(this)
-    setupChannel(channel)
+    setupChannel(channel, self)
     channel
   }
 

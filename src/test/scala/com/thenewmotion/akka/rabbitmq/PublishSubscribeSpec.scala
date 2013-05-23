@@ -1,7 +1,7 @@
 package com.thenewmotion.akka.rabbitmq
 
 import org.specs2.mutable.SpecificationWithJUnit
-import akka.actor.{Props, ActorSystem}
+import akka.actor.{ActorRef, Props, ActorSystem}
 import akka.testkit.{ImplicitSender, TestKit}
 import org.specs2.specification.Scope
 
@@ -16,7 +16,7 @@ class PublishSubscribeSpec extends SpecificationWithJUnit {
       val connection = system.actorOf(Props(new ConnectionActor(factory)), "rabbitmq")
       val exchange = "amq.fanout"
 
-      def setupPublisher(channel: Channel) {
+      def setupPublisher(channel: Channel, self: ActorRef) {
         val queue = channel.queueDeclare().getQueue
         channel.queueBind(queue, exchange, "")
       }
@@ -25,7 +25,7 @@ class PublishSubscribeSpec extends SpecificationWithJUnit {
       val ChannelCreated(publisher) = expectMsgType[ChannelCreated]
 
 
-      def setupSubscriber(channel: Channel) {
+      def setupSubscriber(channel: Channel, self: ActorRef) {
         val queue = channel.queueDeclare().getQueue
         channel.queueBind(queue, exchange, "")
         val consumer = new DefaultConsumer(channel) {

@@ -2,7 +2,7 @@ package com.thenewmotion.akka.rabbitmq
 
 import org.specs2.mutable.SpecificationWithJUnit
 import akka.testkit.{ImplicitSender, TestFSMRef, TestKit}
-import akka.actor.{Props, ActorSystem}
+import akka.actor.{ActorRef, Props, ActorSystem}
 import org.specs2.specification.Scope
 import ConnectionActor._
 import com.rabbitmq.client.ShutdownSignalException
@@ -23,7 +23,7 @@ class ConnectionActorSpec extends SpecificationWithJUnit with Mockito {
       val order = inOrder(factory, connection, setup, actor)
       there was one(factory).newConnection()
       there was one(connection).addShutdownListener(any)
-      there was one(setup).apply(connection)
+      there was one(setup).apply(connection, actorRef)
     }
     "not reconnect if has connection" in new TestScope {
       actorRef.setState(Connected, Connected(connection))
@@ -115,7 +115,7 @@ class ConnectionActorSpec extends SpecificationWithJUnit with Mockito {
     }
     val create = CreateChannel(mock[Props])
     val reconnectionDelay = FiniteDuration(10, TimeUnit.SECONDS)
-    val setup = mock[Connection => Any]
+    val setup = mock[(Connection, ActorRef) => Any]
     val actorRef = TestFSMRef(new TestConnectionActor)
 
     def actor = actorRef.underlyingActor.asInstanceOf[ConnectionActor]
