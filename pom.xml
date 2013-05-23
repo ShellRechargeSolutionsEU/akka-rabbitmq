@@ -22,7 +22,7 @@
     </licenses>
 
     <properties>
-        <akka.version>2.1.2</akka.version>
+        <akka.version>2.1.4</akka.version>
     </properties>
 
     <developers>
