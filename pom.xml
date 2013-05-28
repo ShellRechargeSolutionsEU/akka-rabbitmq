@@ -10,7 +10,7 @@
 
     <groupId>com.thenewmotion.akka</groupId>
     <artifactId>akka-rabbitmq_2.10</artifactId>
-    <version>0.0.3-SNAPSHOT</version>
+    <version>0.0.3</version>
 
     <url>https://github.com/thenewmotion/akka-rabbitmq</url>
 
