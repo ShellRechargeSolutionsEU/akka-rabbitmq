@@ -1,9 +1,10 @@
 package com.thenewmotion.akka.rabbitmq
 
 import org.specs2.mutable.SpecificationWithJUnit
-import akka.testkit.{TestActorRef, TestProbe, TestKit}
+import akka.testkit.{ImplicitSender, TestActorRef, TestProbe, TestKit}
 import akka.actor.{ActorRef, Actor, ActorSystem}
 import org.specs2.mock.Mockito
+import org.specs2.specification.Scope
 
 /**
  * @author Yaroslav Klymko
@@ -21,14 +22,15 @@ class WithChannelSpec extends SpecificationWithJUnit with Mockito {
       expectMsg(Reply(testActor))
     }
     "stop channel on stop" in new TestScope {
+      actor ! ChannelCreated(testActor)
       actor.stop()
       testActor.isTerminated must beTrue
     }
   }
 
-  abstract class TestScope extends TestKit(ActorSystem()) {
-    val actor = TestActorRef[TestWithChannel]
+  abstract class TestScope extends TestKit(ActorSystem()) with ImplicitSender with Scope {
     val connectionProbe = TestProbe()
+    val actor = TestActorRef(new TestWithChannel)
 
     object Command
     case class Reply(channelActor: ActorRef)
