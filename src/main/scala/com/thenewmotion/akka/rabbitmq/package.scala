@@ -2,8 +2,8 @@ package com.thenewmotion.akka
 
 import akka.actor.{Props, ActorRef}
 import akka.util.Timeout
-import concurrent.duration._
-import concurrent.Await
+import scala.concurrent.duration._
+import scala.concurrent.Await
 import com.rabbitmq.{client => rabbit}
 
 /**
@@ -24,15 +24,15 @@ package object rabbitmq {
 
   case class ChannelMessage(onChannel: OnChannel, dropIfNoChannel: Boolean = true)
 
-  implicit def reachConnectionFactory(x: ConnectionFactory) = new {
-    def uri: String = "amqp://%s@%s:%d/%s".format(x.getUsername, x.getHost, x.getPort, x.getVirtualHost)
+  implicit class ReachConnectionFactory(val self: ConnectionFactory) extends AnyVal {
+    def uri: String = "amqp://%s@%s:%d/%s".format(self.getUsername, self.getHost, self.getPort, self.getVirtualHost)
   }
 
-  implicit def reachConnectionActor(connection: ActorRef) = new {
+  implicit class ReachConnectionActor(val self: ActorRef) extends AnyVal {
     def createChannel(props: Props, name: Option[String] = None)
                      (implicit timeout: Timeout = Timeout(2 seconds)): ActorRef = {
       import akka.pattern.ask
-      val future = connection ? CreateChannel(props, name)
+      val future = self ? CreateChannel(props, name)
       Await.result(future, timeout.duration).asInstanceOf[ChannelCreated].channel
     }
   }
