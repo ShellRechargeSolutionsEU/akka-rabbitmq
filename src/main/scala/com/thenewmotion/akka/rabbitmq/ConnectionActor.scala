@@ -18,16 +18,6 @@ object ConnectionActor {
   sealed trait Message
   case object ProvideChannel extends Message
   case object Connect extends Message
-
-  @deprecated("Use com.thenewmotion.akka.rabbitmq.ConnectionCreated instead", "0.3")
-  type Created = ChannelCreated
-  @deprecated("Use com.thenewmotion.akka.rabbitmq.ConnectionCreated instead", "0.3")
-  val Created = ChannelCreated
-
-  @deprecated("Use com.thenewmotion.akka.rabbitmq.CreateConnection instead", "0.3")
-  type Create = CreateChannel
-  @deprecated("Use com.thenewmotion.akka.rabbitmq.CreateConnection instead", "0.3")
-  val Create = CreateChannel
 }
 
 
@@ -47,6 +37,7 @@ class ConnectionActor(factory: ConnectionFactory,
       safe(setup).getOrElse {
         log.error("can't connect to {}, retrying in {}", factory.uri, reconnectionDelay)
         setTimer(reconnectTimer, Connect, reconnectionDelay, repeat = false)
+        stay()
       }
 
     case Event(CreateChannel(props, name), _) =>

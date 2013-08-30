@@ -1,15 +1,15 @@
 package com.thenewmotion.akka.rabbitmq
 
 import org.specs2.mutable.SpecificationWithJUnit
+import org.specs2.specification.Scope
+import org.specs2.mock.Mockito
 import akka.testkit.{ImplicitSender, TestFSMRef, TestKit}
 import akka.actor.{ActorRef, Props, ActorSystem}
-import org.specs2.specification.Scope
 import ConnectionActor._
 import com.rabbitmq.client.ShutdownSignalException
-import org.specs2.mock.Mockito
-import concurrent.duration.FiniteDuration
+import scala.concurrent.duration._
+import scala.collection.immutable.Iterable
 import java.io.IOException
-import java.util.concurrent.TimeUnit
 
 
 /**
@@ -113,8 +113,8 @@ class ConnectionActorSpec extends SpecificationWithJUnit with Mockito {
       factory.newConnection() returns connection
       factory
     }
-    val create = CreateChannel(mock[Props])
-    val reconnectionDelay = FiniteDuration(10, TimeUnit.SECONDS)
+    val create = CreateChannel(null)
+    val reconnectionDelay = FiniteDuration(10, SECONDS)
     val setup = mock[(Connection, ActorRef) => Any]
     val actorRef = TestFSMRef(new TestConnectionActor)
 

@@ -10,7 +10,7 @@
 
     <groupId>com.thenewmotion.akka</groupId>
     <artifactId>akka-rabbitmq_2.10</artifactId>
-    <version>0.0.5-SNAPSHOT</version>
+    <version>1.0.0-SNAPSHOT</version>
 
     <url>https://github.com/thenewmotion/akka-rabbitmq</url>
 
@@ -22,7 +22,7 @@
     </licenses>
 
     <properties>
-        <akka.version>2.1.4</akka.version>
+        <akka.version>2.2.1</akka.version>
     </properties>
 
     <developers>
@@ -36,7 +36,7 @@
         <dependency>
             <groupId>com.rabbitmq</groupId>
             <artifactId>amqp-client</artifactId>
-            <version>3.1.0</version>
+            <version>3.1.3</version>
         </dependency>
         <dependency>
             <groupId>com.typesafe.akka</groupId>
