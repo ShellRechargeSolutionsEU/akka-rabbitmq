@@ -3,8 +3,8 @@ package com.thenewmotion.akka.rabbitmq
 import org.specs2.mutable.SpecificationWithJUnit
 import org.specs2.specification.Scope
 import org.specs2.mock.Mockito
-import akka.testkit.{TestFSMRef, TestKit}
-import akka.actor.{ActorRef, ActorSystem}
+import akka.testkit.{ TestFSMRef, TestKit }
+import akka.actor.{ ActorRef, ActorSystem }
 import ChannelActor._
 import com.rabbitmq.client.ShutdownSignalException
 import collection.immutable.Queue

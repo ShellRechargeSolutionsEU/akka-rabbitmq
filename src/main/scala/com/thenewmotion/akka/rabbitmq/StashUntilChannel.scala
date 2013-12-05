@@ -1,18 +1,19 @@
 package com.thenewmotion.akka.rabbitmq
 
-import akka.actor.{ Props, ActorRef, Actor }
+import akka.actor.{ Stash, ActorRef }
 
 /**
  * @author Yaroslav Klymko
  */
-@deprecated("1.0.0", "use StashUntilChannel instead")
-trait WithChannel {
-  this: Actor =>
+trait StashUntilChannel extends Stash {
+  this: Stash =>
 
   var channelActor: Option[ActorRef] = None
 
   def connectionActor: ActorRef
+
   def receiveWithChannel(channelActor: ActorRef): Receive
+
   def setupChannel(channel: Channel, channelActor: ActorRef) {}
 
   def createChannel() {
@@ -22,7 +23,10 @@ trait WithChannel {
   def receiveChannelCreated: Receive = {
     case ChannelCreated(channel) =>
       channelActor = Some(channel)
+      unstashAll()
       context become receiveWithChannel(channel)
+
+    case x => stash()
   }
 
   def closeChannel() {

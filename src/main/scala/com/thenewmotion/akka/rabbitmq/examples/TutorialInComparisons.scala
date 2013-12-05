@@ -1,7 +1,7 @@
 package com.thenewmotion.akka.rabbitmq
 package examples
 
-import akka.actor.{Actor, ActorRef, Props, ActorSystem}
+import akka.actor.{ Actor, ActorRef, Props, ActorSystem }
 
 /**
  * @author Yaroslav Klymko
@@ -16,12 +16,12 @@ class TutorialInComparisons(implicit system: ActorSystem) {
 
   val connectionActor = {
     val factory = new ConnectionFactory()
-    val connectionActor: ActorRef = system.actorOf(Props(new ConnectionActor(factory)))
+    val connectionActor: ActorRef = system.actorOf(ConnectionActor.props(factory))
 
-    system.actorOf(Props(new ConnectionActor(factory)), "my-connection")
+    system.actorOf(ConnectionActor.props(factory), "my-connection")
 
     import concurrent.duration._
-    system.actorOf(Props(new ConnectionActor(factory, reconnectionDelay = 10.seconds)), "my-connection")
+    system.actorOf(ConnectionActor.props(factory, reconnectionDelay = 10.seconds), "my-connection")
 
     connectionActor
   }
@@ -32,11 +32,11 @@ class TutorialInComparisons(implicit system: ActorSystem) {
   }
 
   val channelActor = {
-    val channelActor: ActorRef = connectionActor.createChannel(Props(new ChannelActor()))
+    val channelActor: ActorRef = connectionActor.createChannel(ChannelActor.props())
 
-    connectionActor.createChannel(Props(new ChannelActor()), Some("my-channel"))
+    connectionActor.createChannel(ChannelActor.props(), Some("my-channel"))
 
-    connectionActor ! CreateChannel(Props(new ChannelActor()))
+    connectionActor ! CreateChannel(ChannelActor.props())
 
     connectionActor.createChannel(Props(new Actor {
       def receive = {
@@ -55,9 +55,8 @@ class TutorialInComparisons(implicit system: ActorSystem) {
     def setupChannel(channel: Channel, self: ActorRef) {
       channel.queueDeclare("queue_name", false, false, false, null)
     }
-    val channelActor: ActorRef = connectionActor.createChannel(Props(new ChannelActor(setupChannel)))
+    val channelActor: ActorRef = connectionActor.createChannel(ChannelActor.props(setupChannel))
   }
-
 
   {
     channel.basicPublish("", "queue_name", null, "Hello world".getBytes)

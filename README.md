@@ -33,18 +33,18 @@ Default approach:
 Actor style:
 ```scala
     val factory = new ConnectionFactory()
-    val connectionActor: ActorRef = system.actorOf(Props(new ConnectionActor(factory)))
+    val connectionActor: ActorRef = system.actorOf(ConnectionActor.props(factory))
 ```
 
 Let's name it:
 ```scala
-    system.actorOf(Props(new ConnectionActor(factory)), "my-connection")
+    system.actorOf(ConnectionActor.props(factory), "my-connection")
 ```
 
 How often will it reconnect?
 ```scala
     import concurrent.duration._
-    system.actorOf(Props(new ConnectionActor(factory, reconnectionDelay = 10.seconds)), "my-connection")
+    system.actorOf(ConnectionActor.props(factory, reconnectionDelay = 10.seconds), "my-connection")
 ```
 
 ### Create channel
@@ -56,19 +56,19 @@ That's plain option:
 
 But we can do better. Asynchronously:
 ```scala
-    connectionActor ! CreateChannel(Props(new ChannelActor()))
+    connectionActor ! CreateChannel(ChannelActor.props())
 ```
 
 Synchronously:
 ```scala
     import com.thenewmotion.akka.rabbitmq.reachConnectionActor
 
-    val channelActor: ActorRef = connectionActor.createChannel(Props(new ChannelActor()))
+    val channelActor: ActorRef = connectionActor.createChannel(ChannelActor.props())
 ```
 
 Maybe give it a name:
 ```scala
-    connectionActor.createChannel(Props(new ChannelActor()), Some("my-channel"))
+    connectionActor.createChannel(ChannelActor.props(), Some("my-channel"))
 ```
 
 What's about custom actor:
@@ -91,7 +91,7 @@ Actor style:
     def setupChannel(channel: Channel, self: ActorRef) {
       channel.queueDeclare("queue_name", false, false, false, null)
     }
-    val channelActor: ActorRef = connectionActor.createChannel(Props(new ChannelActor(setupChannel)))
+    val channelActor: ActorRef = connectionActor.createChannel(ChannelActor.props(setupChannel))
 ```
 
 ### Use channel
@@ -146,7 +146,7 @@ Here is [RabbitMQ Publish/Subscribe](http://www.rabbitmq.com/tutorials/tutorial-
 object PublishSubscribe extends App {
   implicit val system = ActorSystem()
   val factory = new ConnectionFactory()
-  val connection = system.actorOf(Props(new ConnectionActor(factory)), "rabbitmq")
+  val connection = system.actorOf(ConnectionActor.props(factory), "rabbitmq")
   val exchange = "amq.fanout"
 
 
@@ -154,7 +154,7 @@ object PublishSubscribe extends App {
     val queue = channel.queueDeclare().getQueue
     channel.queueBind(queue, exchange, "")
   }
-  connection ! CreateChannel(Props(new ChannelActor(setupPublisher)), Some("publisher"))
+  connection ! CreateChannel(ChannelActor.props(setupPublisher), Some("publisher"))
 
 
   def setupSubscriber(channel: Channel, self: ActorRef) {
@@ -167,7 +167,7 @@ object PublishSubscribe extends App {
     }
     channel.basicConsume(queue, true, consumer)
   }
-  connection ! CreateChannel(Props(new ChannelActor(setupSubscriber)), Some("subscriber"))
+  connection ! CreateChannel(ChannelActor.props(setupSubscriber), Some("subscriber"))
 
 
   Future {
@@ -206,6 +206,6 @@ object PublishSubscribe extends App {
     <dependency>
         <groupId>com.thenewmotion.akka</groupId>
         <artifactId>akka-rabbitmq_2.10</artifactId>
-        <version>1.0.0</version>
+        <version>1.1.0</version>
     </dependency>
 ```

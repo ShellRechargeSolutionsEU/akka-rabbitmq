@@ -3,14 +3,13 @@ package com.thenewmotion.akka.rabbitmq
 import org.specs2.mutable.SpecificationWithJUnit
 import org.specs2.specification.Scope
 import org.specs2.mock.Mockito
-import akka.testkit.{ImplicitSender, TestFSMRef, TestKit}
-import akka.actor.{ActorRef, Props, ActorSystem}
+import akka.testkit.{ ImplicitSender, TestFSMRef, TestKit }
+import akka.actor.{ ActorRef, Props, ActorSystem }
 import ConnectionActor._
 import com.rabbitmq.client.ShutdownSignalException
 import scala.concurrent.duration._
 import scala.collection.immutable.Iterable
 import java.io.IOException
-
 
 /**
  * @author Yaroslav Klymko

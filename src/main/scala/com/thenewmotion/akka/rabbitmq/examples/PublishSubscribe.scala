@@ -1,7 +1,7 @@
 package com.thenewmotion.akka.rabbitmq
 package examples
 
-import akka.actor.{ActorRef, Props, ActorSystem}
+import akka.actor.{ ActorRef, Props, ActorSystem }
 import concurrent.Future
 import concurrent.ExecutionContext.Implicits.global
 
@@ -11,16 +11,14 @@ import concurrent.ExecutionContext.Implicits.global
 object PublishSubscribe extends App {
   implicit val system = ActorSystem()
   val factory = new ConnectionFactory()
-  val connection = system.actorOf(Props(new ConnectionActor(factory)), "rabbitmq")
+  val connection = system.actorOf(ConnectionActor.props(factory), "rabbitmq")
   val exchange = "amq.fanout"
-
 
   def setupPublisher(channel: Channel, self: ActorRef) {
     val queue = channel.queueDeclare().getQueue
     channel.queueBind(queue, exchange, "")
   }
-  connection ! CreateChannel(Props(new ChannelActor(setupPublisher)), Some("publisher"))
-
+  connection ! CreateChannel(ChannelActor.props(setupPublisher), Some("publisher"))
 
   def setupSubscriber(channel: Channel, self: ActorRef) {
     val queue = channel.queueDeclare().getQueue
@@ -32,8 +30,7 @@ object PublishSubscribe extends App {
     }
     channel.basicConsume(queue, true, consumer)
   }
-  connection ! CreateChannel(Props(new ChannelActor(setupSubscriber)), Some("subscriber"))
-
+  connection ! CreateChannel(ChannelActor.props(setupSubscriber), Some("subscriber"))
 
   Future {
     def loop(n: Long) {

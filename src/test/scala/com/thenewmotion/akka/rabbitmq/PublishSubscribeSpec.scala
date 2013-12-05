@@ -1,8 +1,8 @@
 package com.thenewmotion.akka.rabbitmq
 
 import org.specs2.mutable.SpecificationWithJUnit
-import akka.actor.{ActorRef, Props, ActorSystem}
-import akka.testkit.{ImplicitSender, TestKit}
+import akka.actor.{ ActorRef, Props, ActorSystem }
+import akka.testkit.{ ImplicitSender, TestKit }
 import org.specs2.specification.Scope
 
 /**
@@ -13,7 +13,7 @@ class PublishSubscribeSpec extends SpecificationWithJUnit {
 
     "Publish and Subscribe" in new TestScope {
       val factory = new ConnectionFactory()
-      val connection = system.actorOf(Props(new ConnectionActor(factory)), "rabbitmq")
+      val connection = system.actorOf(ConnectionActor.props(factory), "rabbitmq")
       val exchange = "amq.fanout"
 
       def setupPublisher(channel: Channel, self: ActorRef) {
@@ -21,9 +21,8 @@ class PublishSubscribeSpec extends SpecificationWithJUnit {
         channel.queueBind(queue, exchange, "")
       }
 
-      connection ! CreateChannel(Props(new ChannelActor(setupPublisher)), Some("publisher"))
+      connection ! CreateChannel(ChannelActor.props(setupPublisher), Some("publisher"))
       val ChannelCreated(publisher) = expectMsgType[ChannelCreated]
-
 
       def setupSubscriber(channel: Channel, self: ActorRef) {
         val queue = channel.queueDeclare().getQueue
@@ -36,9 +35,8 @@ class PublishSubscribeSpec extends SpecificationWithJUnit {
         channel.basicConsume(queue, true, consumer)
       }
 
-      connection ! CreateChannel(Props(new ChannelActor(setupSubscriber)), Some("subscriber"))
+      connection ! CreateChannel(ChannelActor.props(setupSubscriber), Some("subscriber"))
       val ChannelCreated(subscriber) = expectMsgType[ChannelCreated]
-
 
       val msgs = (0L to 100)
       msgs.foreach(x =>

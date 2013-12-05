@@ -1,6 +1,6 @@
 package com.thenewmotion.akka.rabbitmq
 
-import akka.actor.{ActorRef, FSM}
+import akka.actor.{ Props, ActorRef, FSM }
 import collection.immutable.Queue
 import ConnectionActor.ProvideChannel
 
@@ -20,12 +20,14 @@ object ChannelActor {
   type ChannelMessage = com.thenewmotion.akka.rabbitmq.ChannelMessage
   @deprecated("Use com.thenewmotion.akka.rabbitmq.ChannelMessage instead", "0.3")
   val ChannelMessage = com.thenewmotion.akka.rabbitmq.ChannelMessage
+
+  def props(setupChannel: (Channel, ActorRef) => Any = (_, _) => ()): Props =
+    Props(classOf[ChannelActor], setupChannel)
 }
 
-
-class ChannelActor(setupChannel: (Channel, ActorRef) => Any = (_, _) => ())
-  extends RabbitMqActor
-  with FSM[ChannelActor.State, ChannelActor.Data] {
+class ChannelActor(setupChannel: (Channel, ActorRef) => Any)
+    extends RabbitMqActor
+    with FSM[ChannelActor.State, ChannelActor.Data] {
 
   import ChannelActor._
 
@@ -84,7 +86,7 @@ class ChannelActor(setupChannel: (Channel, ActorRef) => Any = (_, _) => ())
       log.debug("closing channel {}", channel)
       closeIfOpen(channel)
   }
-  initialize
+  initialize()
 
   def setup(channel: Channel): Channel = {
     log.debug("setting up new channel {}", channel)

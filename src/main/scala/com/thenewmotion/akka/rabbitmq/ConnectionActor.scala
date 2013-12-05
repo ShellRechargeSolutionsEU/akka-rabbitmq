@@ -1,6 +1,6 @@
 package com.thenewmotion.akka.rabbitmq
 
-import akka.actor.{ActorRef, Props, FSM}
+import akka.actor.{ ActorRef, Props, FSM }
 import concurrent.duration._
 
 /**
@@ -18,14 +18,20 @@ object ConnectionActor {
   sealed trait Message
   case object ProvideChannel extends Message
   case object Connect extends Message
+
+  def props(
+    factory: ConnectionFactory,
+    reconnectionDelay: FiniteDuration = 10.seconds,
+    setupConnection: (Connection, ActorRef) => Any = (_, _) => ()): Props =
+    Props(classOf[ConnectionActor], factory, reconnectionDelay, setupConnection)
 }
 
-
-class ConnectionActor(factory: ConnectionFactory,
-                      reconnectionDelay: FiniteDuration = 10.seconds,
-                      setupConnection: (Connection, ActorRef) => Any = (_, _) => ())
-  extends RabbitMqActor
-  with FSM[ConnectionActor.State, ConnectionActor.Data] {
+class ConnectionActor(
+  factory: ConnectionFactory,
+  reconnectionDelay: FiniteDuration ,
+  setupConnection: (Connection, ActorRef) => Any)
+    extends RabbitMqActor
+    with FSM[ConnectionActor.State, ConnectionActor.Data] {
   import ConnectionActor._
 
   val reconnectTimer = "reconnect"
@@ -110,7 +116,7 @@ class ConnectionActor(factory: ConnectionFactory,
 
   def newChild(props: Props, name: Option[String]) = name match {
     case Some(x) => context.actorOf(props, x)
-    case None => context.actorOf(props)
+    case None    => context.actorOf(props)
   }
 
   override def preStart() {

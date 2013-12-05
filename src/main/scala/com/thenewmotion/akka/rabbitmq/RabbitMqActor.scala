@@ -1,7 +1,7 @@
 package com.thenewmotion.akka.rabbitmq
 
 import akka.actor.Actor
-import com.rabbitmq.client.{ShutdownListener, ShutdownSignalException}
+import com.rabbitmq.client.{ ShutdownListener, ShutdownSignalException }
 import java.io.IOException
 import akka.event.LoggingAdapter
 
@@ -27,7 +27,7 @@ trait RabbitMqActor extends Actor with ShutdownListener {
   }
 
   def safe[T](f: => T): Option[T] = try Some(f) catch {
-    case _: IOException => None
+    case _: IOException             => None
     case _: ShutdownSignalException => None
   }
 }
