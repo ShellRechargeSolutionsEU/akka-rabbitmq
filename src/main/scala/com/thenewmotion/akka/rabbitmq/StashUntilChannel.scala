@@ -6,7 +6,6 @@ import akka.actor.{ Stash, ActorRef }
  * @author Yaroslav Klymko
  */
 trait StashUntilChannel extends Stash {
-  this: Stash =>
 
   var channelActor: Option[ActorRef] = None
 
