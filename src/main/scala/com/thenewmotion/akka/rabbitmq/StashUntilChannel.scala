@@ -1,11 +1,13 @@
 package com.thenewmotion.akka.rabbitmq
 
-import akka.actor.{ Stash, ActorRef }
+import akka.actor.{ Actor, ActorRef }
+import scala.collection.immutable.Queue
 
 /**
  * @author Yaroslav Klymko
  */
-trait StashUntilChannel extends Stash {
+trait StashUntilChannel {
+  this: Actor =>
 
   var channelActor: Option[ActorRef] = None
 
@@ -19,13 +21,18 @@ trait StashUntilChannel extends Stash {
     connectionActor ! CreateChannel(ChannelActor.props(setupChannel))
   }
 
-  def receiveChannelCreated: Receive = {
+  def receiveChannelCreated(stash: Queue[Any]): Receive = {
     case ChannelCreated(channel) =>
       channelActor = Some(channel)
-      unstashAll()
-      context become receiveWithChannel(channel)
+      val receive = receiveWithChannel(channel)
+      stash.foreach {
+        x =>
+          if (receive isDefinedAt x) receive apply x
+          else context.system.deadLetters ! x
+      }
+      context become receive
 
-    case x => stash()
+    case x => context become receiveChannelCreated(stash enqueue x)
   }
 
   def closeChannel() {
@@ -36,7 +43,7 @@ trait StashUntilChannel extends Stash {
     createChannel()
   }
 
-  def receive = receiveChannelCreated
+  def receive = receiveChannelCreated(Queue())
 
   override def postStop() {
     closeChannel()
