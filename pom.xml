@@ -10,7 +10,7 @@
 
     <groupId>com.thenewmotion.akka</groupId>
     <artifactId>akka-rabbitmq_2.10</artifactId>
-    <version>1.1.1-SNAPSHOT</version>
+    <version>1.1.1</version>
 
     <url>https://github.com/thenewmotion/akka-rabbitmq</url>
 
@@ -69,7 +69,7 @@
         <url>https://github.com/thenewmotion/akka-rabbitmq</url>
         <connection>scm:git:ssh://git@github.com/thenewmotion/akka-rabbitmq.git</connection>
         <developerConnection>scm:git:ssh://git@github.com/thenewmotion/akka-rabbitmq.git</developerConnection>
-      <tag>HEAD</tag>
+      <tag>akka-rabbitmq_2.10-1.1.1</tag>
   </scm>
 
     <build>
