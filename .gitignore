@@ -6,7 +6,7 @@
 .buildpath
 
 # Maven
-/target/
+target
 
 # Mac
 .DS_Store
