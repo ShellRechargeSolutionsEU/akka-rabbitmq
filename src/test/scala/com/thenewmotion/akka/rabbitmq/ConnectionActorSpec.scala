@@ -1,10 +1,8 @@
 package com.thenewmotion.akka.rabbitmq
 
-import org.specs2.mutable.SpecificationWithJUnit
-import org.specs2.specification.Scope
 import org.specs2.mock.Mockito
-import akka.testkit.{ ImplicitSender, TestFSMRef, TestKit }
-import akka.actor.{ ActorRef, Props, ActorSystem }
+import akka.testkit.TestFSMRef
+import akka.actor.{ ActorRef, Props }
 import ConnectionActor._
 import com.rabbitmq.client.ShutdownSignalException
 import scala.concurrent.duration._
@@ -14,7 +12,7 @@ import java.io.IOException
 /**
  * @author Yaroslav Klymko
  */
-class ConnectionActorSpec extends SpecificationWithJUnit with Mockito {
+class ConnectionActorSpec extends ActorSpec with Mockito {
   "ConnectionActor" should {
     "try to connect on startup" in new TestScope {
       actorRef ! Connect
@@ -99,7 +97,7 @@ class ConnectionActorSpec extends SpecificationWithJUnit with Mockito {
     }
   }
 
-  private abstract class TestScope extends TestKit(ActorSystem()) with ImplicitSender with Scope {
+  private abstract class TestScope extends ActorScope {
     val channel = mock[Channel]
     val connection = {
       val connection = mock[Connection]

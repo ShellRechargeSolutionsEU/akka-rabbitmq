@@ -1,9 +1,10 @@
 package com.thenewmotion.akka.rabbitmq
 
+import scala.language.reflectiveCalls
 import akka.actor.Actor
+import akka.event.LoggingAdapter
 import com.rabbitmq.client.{ ShutdownListener, ShutdownSignalException }
 import java.io.IOException
-import akka.event.LoggingAdapter
 
 /**
  * @author Yaroslav Klymko

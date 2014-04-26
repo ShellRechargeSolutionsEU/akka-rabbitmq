@@ -28,7 +28,7 @@ object ConnectionActor {
 
 class ConnectionActor(
   factory: ConnectionFactory,
-  reconnectionDelay: FiniteDuration ,
+  reconnectionDelay: FiniteDuration,
   setupConnection: (Connection, ActorRef) => Any)
     extends RabbitMqActor
     with FSM[ConnectionActor.State, ConnectionActor.Data] {

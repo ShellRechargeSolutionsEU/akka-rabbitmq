@@ -202,10 +202,17 @@ object PublishSubscribe extends App {
 ```
 
 2. Add dependency to your pom.xml:
+
+```scala
+    libraryDependencies += "com.thenewmotion.akka" %% "akka-rabbitmq" % "1.1.0"
+```
+
+or
+
 ```xml
     <dependency>
         <groupId>com.thenewmotion.akka</groupId>
-        <artifactId>akka-rabbitmq_2.10</artifactId>
+        <artifactId>akka-rabbitmq_{2.10/2.11}</artifactId>
         <version>1.1.0</version>
     </dependency>
 ```

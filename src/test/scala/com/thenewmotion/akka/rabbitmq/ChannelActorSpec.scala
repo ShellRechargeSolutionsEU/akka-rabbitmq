@@ -1,6 +1,5 @@
 package com.thenewmotion.akka.rabbitmq
 
-import org.specs2.mutable.SpecificationWithJUnit
 import org.specs2.specification.Scope
 import org.specs2.mock.Mockito
 import akka.testkit.{ TestFSMRef, TestKit }
@@ -14,7 +13,7 @@ import ConnectionActor.ProvideChannel
 /**
  * @author Yaroslav Klymko
  */
-class ChannelActorSpec extends SpecificationWithJUnit with Mockito {
+class ChannelActorSpec extends ActorSpec with Mockito {
   "ChannelActor" should {
     "setup channel when channel received" in new TestScope {
       actorRef ! channel
@@ -84,7 +83,7 @@ class ChannelActorSpec extends SpecificationWithJUnit with Mockito {
     }
   }
 
-  private abstract class TestScope extends TestKit(ActorSystem()) with Scope {
+  private abstract class TestScope extends ActorScope {
     val setupChannel = mock[(Channel, ActorRef) => Unit]
     val onChannel = mock[OnChannel]
     val channel = {

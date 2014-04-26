@@ -1,15 +1,13 @@
 package com.thenewmotion.akka.rabbitmq
 
-import org.specs2.mutable.SpecificationWithJUnit
-import akka.testkit.{ ImplicitSender, TestActorRef, TestProbe, TestKit }
-import akka.actor.{ Terminated, ActorRef, Actor, ActorSystem }
+import akka.testkit.{ TestActorRef, TestProbe }
+import akka.actor.{ Terminated, ActorRef, Actor }
 import org.specs2.mock.Mockito
-import org.specs2.specification.Scope
 
 /**
  * @author Yaroslav Klymko
  */
-class WithChannelSpec extends SpecificationWithJUnit with Mockito {
+class WithChannelSpec extends ActorSpec with Mockito {
   "WithChannel" should {
     "retrieve channel on start" in new TestScope {
       connectionProbe.expectMsgType[CreateChannel]
@@ -32,7 +30,7 @@ class WithChannelSpec extends SpecificationWithJUnit with Mockito {
     }
   }
 
-  abstract class TestScope extends TestKit(ActorSystem()) with ImplicitSender with Scope {
+  abstract class TestScope extends ActorScope {
     val connectionProbe = TestProbe()
     val actor = TestActorRef(new TestWithChannel)
 

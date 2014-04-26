@@ -1,14 +1,11 @@
 package com.thenewmotion.akka.rabbitmq
 
-import org.specs2.mutable.SpecificationWithJUnit
-import akka.actor.{ ActorRef, Props, ActorSystem }
-import akka.testkit.{ ImplicitSender, TestKit }
-import org.specs2.specification.Scope
+import akka.actor.ActorRef
 
 /**
  * @author Yaroslav Klymko
  */
-class PublishSubscribeSpec extends SpecificationWithJUnit {
+class PublishSubscribeSpec extends ActorSpec {
   "PublishSubscribe" should {
 
     "Publish and Subscribe" in new TestScope {
@@ -50,5 +47,5 @@ class PublishSubscribeSpec extends SpecificationWithJUnit {
 
   }
 
-  private abstract class TestScope extends TestKit(ActorSystem()) with ImplicitSender with Scope
+  private abstract class TestScope extends ActorScope
 }
