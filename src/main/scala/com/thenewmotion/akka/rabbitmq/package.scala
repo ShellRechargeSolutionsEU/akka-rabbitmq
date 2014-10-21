@@ -24,11 +24,11 @@ package object rabbitmq {
 
   case class ChannelMessage(onChannel: OnChannel, dropIfNoChannel: Boolean = true)
 
-  implicit class ReachConnectionFactory(val self: ConnectionFactory) extends AnyVal {
+  implicit class RichConnectionFactory(val self: ConnectionFactory) extends AnyVal {
     def uri: String = "amqp://%s@%s:%d/%s".format(self.getUsername, self.getHost, self.getPort, self.getVirtualHost)
   }
 
-  implicit class ReachConnectionActor(val self: ActorRef) extends AnyVal {
+  implicit class RichConnectionActor(val self: ActorRef) extends AnyVal {
     def createChannel(props: Props, name: Option[String] = None)(implicit timeout: Timeout = Timeout(2.seconds)): ActorRef = {
       import akka.pattern.ask
       val future = self ? CreateChannel(props, name)
