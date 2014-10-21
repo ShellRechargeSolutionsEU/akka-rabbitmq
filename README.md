@@ -193,26 +193,26 @@ object PublishSubscribe extends App {
 ## Setup
 
 1. Add this repository to your pom.xml:
-```xml
+    ```xml
     <repository>
         <id>thenewmotion</id>
         <name>The New Motion Repository</name>
         <url>http://nexus.thenewmotion.com/content/repositories/releases-public</url>
     </repository>
-```
+    ```
 
 2. Add dependency to your build.sbt:
 
-```scala
-    libraryDependencies += "com.thenewmotion.akka" %% "akka-rabbitmq" % "1.2.0"
-```
+    ```scala
+    libraryDependencies += "com.thenewmotion.akka" %% "akka-rabbitmq" % "1.2.1"
+    ```
 
-or
+    or
 
-```xml
+    ```xml
     <dependency>
         <groupId>com.thenewmotion.akka</groupId>
         <artifactId>akka-rabbitmq_{2.10/2.11}</artifactId>
-        <version>1.2.0</version>
+        <version>1.2.1</version>
     </dependency>
-```
+    ```

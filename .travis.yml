@@ -1,6 +1,11 @@
 language: scala
 scala:
-  - "2.10.4"
-  - "2.11.0"
+  - 2.10.4
+  - 2.11.2
+jdk:
+  - oraclejdk8
+  - oraclejdk7
 services:
   - rabbitmq
+notifications:
+  slack: thenewmotion:AXSluctig1mmZbeKRDeeY41s
