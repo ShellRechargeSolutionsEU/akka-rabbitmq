@@ -21,18 +21,18 @@ trait StashUntilChannel {
     connectionActor ! CreateChannel(ChannelActor.props(setupChannel))
   }
 
-  def receiveChannelCreated(stash: Queue[Any]): Receive = {
+  def receiveChannelCreated(stash: Queue[(Any, ActorRef)]): Receive = {
     case ChannelCreated(channel) =>
       channelActor = Some(channel)
       val receive = receiveWithChannel(channel)
       stash.foreach {
-        x =>
-          if (receive isDefinedAt x) receive apply x
-          else context.system.deadLetters ! x
+        case (msg, originalSender) =>
+          val destination = if (receive isDefinedAt msg) self else context.system.deadLetters
+          destination.tell(msg, originalSender)
       }
       context become receive
 
-    case x => context become receiveChannelCreated(stash enqueue x)
+    case x => context become receiveChannelCreated(stash enqueue (x, sender()))
   }
 
   def closeChannel() {
