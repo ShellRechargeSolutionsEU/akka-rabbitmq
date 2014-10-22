@@ -13,10 +13,10 @@ object Build extends Build {
     scalacOptions := Seq("-encoding", "UTF-8", "-unchecked", "-deprecation", "-feature"),
     libraryDependencies ++= Seq(amqpClient, akkaActor, akkaTestkit, junit, specs2, mockito))
 
-  val akkaVersion = "2.3.2"
+  val akkaVersion = "2.3.6"
 
   lazy val junit       = "junit" % "junit" % "4.11" % "test"
-  lazy val amqpClient  = "com.rabbitmq" % "amqp-client" % "3.3.0"
+  lazy val amqpClient  = "com.rabbitmq" % "amqp-client" % "3.3.5"
   lazy val specs2      = "org.specs2" %% "specs2" % "2.3.11" % "test"
   lazy val akkaActor   = "com.typesafe.akka" %% "akka-actor" % akkaVersion
   lazy val akkaTestkit = "com.typesafe.akka" %% "akka-testkit" % akkaVersion % "test"
