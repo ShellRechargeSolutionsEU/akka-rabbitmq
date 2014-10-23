@@ -11,16 +11,16 @@ object Build extends Build {
     licenses := Seq(("Apache License, Version 2.0", url("http://www.apache.org/licenses/LICENSE-2.0"))),
     homepage := Some(new URL("https://github.com/thenewmotion/akka-rabbitmq")),
     scalacOptions := Seq("-encoding", "UTF-8", "-unchecked", "-deprecation", "-feature"),
-    libraryDependencies ++= Seq(amqpClient, akkaActor, akkaTestkit, junit, specs2, mockito))
+    libraryDependencies ++= Seq(akkaActor, amqpClient, akkaTestkit, junit, mockito, specs2))
 
   val akkaVersion = "2.3.6"
 
-  lazy val junit       = "junit" % "junit" % "4.11" % "test"
-  lazy val amqpClient  = "com.rabbitmq" % "amqp-client" % "3.3.5"
-  lazy val specs2      = "org.specs2" %% "specs2" % "2.3.11" % "test"
-  lazy val akkaActor   = "com.typesafe.akka" %% "akka-actor" % akkaVersion
-  lazy val akkaTestkit = "com.typesafe.akka" %% "akka-testkit" % akkaVersion % "test"
-  lazy val mockito     = "org.mockito" % "mockito-all" % "1.9.5" % "test"
+  lazy val akkaActor    = "com.typesafe.akka" %% "akka-actor" % akkaVersion
+  lazy val amqpClient   = "com.rabbitmq" % "amqp-client" % "3.3.5"
+  lazy val akkaTestkit  = "com.typesafe.akka" %% "akka-testkit" % akkaVersion % "test"
+  lazy val junit        = "junit" % "junit" % "4.11" % "test"
+  lazy val mockito      = "org.mockito" % "mockito-all" % "1.9.5" % "test"
+  lazy val specs2       = "org.specs2" %% "specs2" % "2.3.11" % "test"
 
   lazy val root = Project(
     "akka-rabbitmq",
