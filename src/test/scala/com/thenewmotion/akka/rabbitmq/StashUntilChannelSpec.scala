@@ -1,6 +1,6 @@
 package com.thenewmotion.akka.rabbitmq
 
-import akka.actor.{ Actor, ActorRef, Terminated }
+import akka.actor.{ Props, Actor, ActorRef, Terminated }
 import akka.testkit._
 
 class StashUntilChannelSpec extends ActorSpec {
@@ -35,6 +35,24 @@ class StashUntilChannelSpec extends ActorSpec {
       actor ! ChannelCreated(testActor)
 
       commandSender.expectMsg(Reply(testActor))
+    }
+
+    "process messages that came in when there was no channel before any message that came in after the CreateChannel" in new TestScope {
+      val numMessagesBeforeChannelCreated = 4000
+      class OrderTestStashUntil extends Actor with StashUntilChannel {
+        def connectionActor = connectionProbe.ref
+        def receiveWithChannel(channelActor: ActorRef) = {
+          case msg: Integer => sender() ! msg
+        }
+      }
+      // we cannot use TestActorRef here because TestActorRef processes messages synchronously
+      val orderTestActor = system.actorOf(Props(new OrderTestStashUntil))
+
+      1.to(numMessagesBeforeChannelCreated).foreach(n => orderTestActor ! n)
+      orderTestActor ! ChannelCreated(testActor)
+      orderTestActor ! (numMessagesBeforeChannelCreated + 1)
+
+      1.to(numMessagesBeforeChannelCreated + 1).foreach(expectMsg[Int])
     }
   }
 
