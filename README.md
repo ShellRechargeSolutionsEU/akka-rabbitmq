@@ -21,7 +21,7 @@ It gives you two actors `ConnectionActor` and `ChannelActor`
 
 ``` scala
 resolvers += "The New Motion Public Repo" at "http://nexus.thenewmotion.com/content/groups/public/"
-libraryDependencies += "com.thenewmotion.akka" %% "akka-rabbitmq" % "1.2.1"
+libraryDependencies += "com.thenewmotion.akka" %% "akka-rabbitmq" % "1.2.3"
 ```
 
 ### Maven
@@ -36,7 +36,7 @@ libraryDependencies += "com.thenewmotion.akka" %% "akka-rabbitmq" % "1.2.1"
 <dependency>
     <groupId>com.thenewmotion.akka</groupId>
     <artifactId>akka-rabbitmq_{2.10/2.11}</artifactId>
-    <version>1.2.1</version>
+    <version>1.2.3</version>
 </dependency>
 ```
 
