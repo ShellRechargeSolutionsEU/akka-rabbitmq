@@ -35,7 +35,7 @@ class PublishSubscribeSpec extends ActorSpec {
       connection ! CreateChannel(ChannelActor.props(setupSubscriber), Some("subscriber"))
       val ChannelCreated(subscriber) = expectMsgType[ChannelCreated]
 
-      val msgs = (0L to 100)
+      val msgs = (0L to 33)
       msgs.foreach(x =>
         publisher ! ChannelMessage(_.basicPublish(exchange, "", null, toBytes(x)), dropIfNoChannel = false))
 
