@@ -15,6 +15,31 @@ It gives you two actors `ConnectionActor` and `ChannelActor`
 * send stored messages as soon as new channel received
 * retrieve new channel if current is broken
 
+## Setup
+
+### Sbt
+
+``` scala
+resolvers += "The New Motion Public Repo" at "http://nexus.thenewmotion.com/content/groups/public/"
+libraryDependencies += "com.thenewmotion.akka" %% "akka-rabbitmq" % "1.2.1"
+```
+
+### Maven
+
+```xml
+<repository>
+    <id>thenewmotion</id>
+    <name>The New Motion Repository</name>
+    <url>http://nexus.thenewmotion.com/content/groups/public/</url>
+</repository>
+...
+<dependency>
+    <groupId>com.thenewmotion.akka</groupId>
+    <artifactId>akka-rabbitmq_{2.10/2.11}</artifactId>
+    <version>1.2.1</version>
+</dependency>
+```
+
 ## Tutorial in comparisons
 Before start, you need to add import statement
 
@@ -190,29 +215,3 @@ object PublishSubscribe extends App {
 }
 ```
 
-## Setup
-
-1. Add this repository to your pom.xml:
-    ```xml
-    <repository>
-        <id>thenewmotion</id>
-        <name>The New Motion Repository</name>
-        <url>http://nexus.thenewmotion.com/content/repositories/releases-public</url>
-    </repository>
-    ```
-
-2. Add dependency to your build.sbt:
-
-    ```scala
-    libraryDependencies += "com.thenewmotion.akka" %% "akka-rabbitmq" % "1.2.1"
-    ```
-
-    or
-
-    ```xml
-    <dependency>
-        <groupId>com.thenewmotion.akka</groupId>
-        <artifactId>akka-rabbitmq_{2.10/2.11}</artifactId>
-        <version>1.2.1</version>
-    </dependency>
-    ```
