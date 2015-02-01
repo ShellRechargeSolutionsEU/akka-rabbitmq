@@ -72,6 +72,8 @@ class ChannelActor(setupChannel: (Channel, ActorRef) => Any)
     case Event(ChannelMessage(f, _), Connected(channel)) =>
       safe(f(channel)) match {
         case None =>
+          // Note that we do *not* retry f in this case because its failure might be due to some inherent problem with
+          // f itself, and in that case a whole application might get stuck in a retry loop.
           reconnect(channel)
           goto(Disconnected) using InMemory()
         case _ => stay()
