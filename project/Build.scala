@@ -17,7 +17,7 @@ object Build extends Build {
 
   val akkaActor   = "com.typesafe.akka" %% "akka-actor" % akkaVersion
   val akkaTestkit = "com.typesafe.akka" %% "akka-testkit" % akkaVersion % "test"
-  val amqpClient  = "com.rabbitmq" % "amqp-client" % "3.4.2"
+  val amqpClient  = "com.rabbitmq" % "amqp-client" % "3.5.1"
   val specs2JUnit = "org.specs2" %% "specs2-junit" % "2.4.15" % "test"
   val specs2Mock  = "org.specs2" %% "specs2-mock" % "2.4.15" % "test"
 

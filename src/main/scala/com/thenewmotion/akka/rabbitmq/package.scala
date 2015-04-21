@@ -1,10 +1,11 @@
 package com.thenewmotion.akka
 
-import akka.actor.{ Props, ActorRef }
+import akka.actor.{ ActorRef, Props }
 import akka.util.Timeout
-import scala.concurrent.duration._
-import scala.concurrent.Await
 import com.rabbitmq.{ client => rabbit }
+
+import scala.concurrent.Await
+import scala.concurrent.duration._
 
 /**
  * @author Yaroslav Klymko

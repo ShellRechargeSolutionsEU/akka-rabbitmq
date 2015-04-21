@@ -3,6 +3,7 @@ package com.thenewmotion.akka.rabbitmq
 import java.util.concurrent.TimeUnit
 
 import akka.actor.ActorRef
+import com.thenewmotion.akka.rabbitmq.ChannelActor.SuccessfullyQueued
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -39,13 +40,14 @@ class PublishSubscribeSpec extends ActorSpec {
       connection ! CreateChannel(ChannelActor.props(setupSubscriber), Some("subscriber"))
       val ChannelCreated(subscriber) = expectMsgType[ChannelCreated]
 
-      val msgs = 0L to 33L
-      msgs.foreach(x =>
-        publisher ! ChannelMessage(_.basicPublish(exchange, "", null, toBytes(x)), dropIfNoChannel = false))
+      val msgs = List.fill(33)(SuccessfullyQueued)
+      msgs.zipWithIndex.foreach(x =>
+        publisher ! ChannelMessage(_.basicPublish(exchange, "", null, toBytes(x._2)), dropIfNoChannel = false))
 
       expectMsgAllOf(FiniteDuration(33, TimeUnit.SECONDS), msgs: _*)
 
       def fromBytes(x: Array[Byte]) = new String(x, "UTF-8").toLong
+
       def toBytes(x: Long) = x.toString.getBytes("UTF-8")
     }
 
