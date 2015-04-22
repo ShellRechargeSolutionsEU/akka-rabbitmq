@@ -17,7 +17,7 @@ class PublishSubscribeSpec extends ActorSpec {
     "Publish and Subscribe" in new TestScope {
       val factory = new ConnectionFactory()
       val connection = system.actorOf(ConnectionActor.props(factory), "rabbitmq")
-      val exchange = "amq.fanout"
+      val exchange = "amq.direct"
 
       def setupPublisher(channel: Channel, self: ActorRef) {
         val queue = channel.queueDeclare().getQueue
@@ -46,8 +46,8 @@ class PublishSubscribeSpec extends ActorSpec {
         publisher ! ChannelMessage(_.basicPublish(exchange, "", null, toBytes(x)), dropIfNoChannel = false)
       }
 
-      expectMsgAllOf(FiniteDuration(33, TimeUnit.SECONDS), List.fill(33)(SuccessfullyQueued): _*)
-      messageCollector.expectMsgAllOf(FiniteDuration(33, TimeUnit.SECONDS), msgs: _*)
+      expectMsgAllOf(FiniteDuration(33, TimeUnit.SECONDS), List.fill(msgs.length)(SuccessfullyQueued): _*)
+      messageCollector.expectMsgAllOf(FiniteDuration(200, TimeUnit.SECONDS), msgs: _*)
 
       def fromBytes(x: Array[Byte]) = new String(x, "UTF-8").toLong
 
