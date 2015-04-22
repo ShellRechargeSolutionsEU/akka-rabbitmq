@@ -24,7 +24,7 @@ object ChannelActor {
   val ChannelMessage = com.thenewmotion.akka.rabbitmq.ChannelMessage
 
   trait MessageQueued
-  trait FailureQueued
+  trait FailureQueued extends MessageQueued
   case object SuccessfullyQueued extends MessageQueued
   case object NotQueued extends FailureQueued
   case object ConnectionIsBlocked extends FailureQueued

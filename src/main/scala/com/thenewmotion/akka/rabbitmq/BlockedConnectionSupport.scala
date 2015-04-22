@@ -13,8 +13,9 @@ import com.thenewmotion.akka.rabbitmq.BlockedConnectionHandler.{ QueueBlocked, Q
  * More info <a href="https://www.rabbitmq.com/connection-blocked.html">https://www.rabbitmq.com/connection-blocked.html</a>
  */
 object BlockedConnectionSupport {
-  def setupConnection(connection: Connection, connectionMaintainer: ActorRef) = {
-    connection.addBlockedListener(new BlockedConnectionHandler(connectionMaintainer))
+  def setupConnection(connection: Connection, connectionMaintainer: ActorRef): Any = {
+    val handler = new BlockedConnectionHandler(connectionMaintainer)
+    connection.addBlockedListener(handler)
   }
 }
 
