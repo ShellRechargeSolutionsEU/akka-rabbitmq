@@ -88,15 +88,15 @@ class ConnectionActor(
       if (!cause.isInitiatedByApplication) reconnect(connection)
       goto(Disconnected) using NoConnection
 
-    case Event(blocked: QueueBlocked, data: Connected) =>
+    case Event(blocked: QueueBlocked, Connected(conn, _)) =>
       context.children.foreach(_ ! blocked)
       log.debug("connection was blocked by broker")
-      stay()
+      stay() using Connected(conn, Some(blocked.reason))
 
-    case Event(QueueUnblocked, _) =>
+    case Event(QueueUnblocked, Connected(conn, _)) =>
       context.children.foreach(_ ! QueueUnblocked)
       log.debug("connection was unblocked by broker")
-      stay()
+      stay() using Connected(conn, None)
   }
   onTransition {
     case Connected -> Disconnected => log.warning("lost connection to {}", factory.uri)

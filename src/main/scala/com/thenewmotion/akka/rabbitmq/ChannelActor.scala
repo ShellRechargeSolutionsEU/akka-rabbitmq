@@ -110,7 +110,7 @@ class ChannelActor(setupChannel: (Channel, ActorRef) => Any)
     case Event(newChannel: Channel, Blocked(channel, waiting)) =>
       log.debug("closing unexpected channel {}", channel)
       closeIfOpen(channel)
-      sendQueuedMsgs(setup(channel))(waiting.toList)
+      sendQueuedMsgs(setup(newChannel))(waiting.toList)
 
     case Event(_: ShutdownSignal, Blocked(channel, waiting)) =>
       reconnect(channel)
