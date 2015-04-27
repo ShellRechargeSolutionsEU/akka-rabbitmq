@@ -1,5 +1,6 @@
 package com.thenewmotion.akka.rabbitmq
 
+import com.thenewmotion.akka.rabbitmq.BlockedConnectionHandler.QueueBlocked
 import org.specs2.specification.Scope
 import org.specs2.mock.Mockito
 import akka.testkit.{ TestFSMRef, TestKit }
@@ -22,7 +23,7 @@ class ChannelActorSpec extends ActorSpec with Mockito {
       there was one(channel).addShutdownListener(actor)
     }
     "close old channel if new one received" in new TestScope {
-      actorRef.setState(Connected, Connected(channel, None))
+      actorRef.setState(Connected, Connected(channel))
       val newChannel = mock[Channel]
       actorRef ! newChannel
       there was one(channel).close()
@@ -31,13 +32,13 @@ class ChannelActorSpec extends ActorSpec with Mockito {
       there was one(newChannel).addShutdownListener(actor)
     }
     "process message if has channel" in new TestScope {
-      actorRef.setState(Connected, Connected(channel, None))
+      actorRef.setState(Connected, Connected(channel))
       actorRef ! ChannelMessage(onChannel)
       there was one(onChannel).apply(channel)
       state mustEqual connected()
     }
     "process message if has channel and reconnect if failed" in new TestScope {
-      actorRef.setState(Connected, Connected(channel, None))
+      actorRef.setState(Connected, Connected(channel))
       actorRef ! ChannelMessage(onChannelFailure)
       state mustEqual disconnected()
       expectMsg(ProvideChannel)
@@ -51,19 +52,19 @@ class ChannelActorSpec extends ActorSpec with Mockito {
       state mustEqual disconnected()
     }
     "leave channel if told by parent" in new TestScope {
-      actorRef.setState(Connected, Connected(channel, None))
+      actorRef.setState(Connected, Connected(channel))
       actorRef ! AmqpShutdownSignal(shutdownSignal)
       state mustEqual disconnected()
       expectMsg(ProvideChannel)
     }
     "leave channel on ShutdownSignal" in new TestScope {
-      actorRef.setState(Connected, Connected(channel, None))
+      actorRef.setState(Connected, Connected(channel))
       actor.shutdownCompleted(shutdownSignal)
       state mustEqual disconnected()
       expectMsg(ProvideChannel)
     }
     "aks for channel on ShutdownSignal" in new TestScope {
-      actorRef.setState(Connected, Connected(channel, None))
+      actorRef.setState(Connected, Connected(channel))
       actor.shutdownCompleted(shutdownSignal)
       state mustEqual disconnected()
       expectMsg(ProvideChannel)
@@ -81,11 +82,17 @@ class ChannelActorSpec extends ActorSpec with Mockito {
       there was one(onChannel).apply(channel)
       state mustEqual disconnected(last)
     }
+
+    "collect channel message if channel is blocked" in new TestScope {
+      actorRef.setState(Blocked, Blocked(channel))
+      actorRef ! ChannelMessage(onChannel, dropIfNoChannel = false)
+      state mustEqual blocked(channel, onChannel)
+    }
   }
 
   private abstract class TestScope extends ActorScope {
     val setupChannel = mock[(Channel, ActorRef) => Unit]
-    val onChannel = mock[OnChannel]
+    val onChannel: OnChannel = mock[OnChannel]
     val channel = {
       val channel = mock[Channel]
       channel.isOpen returns true
@@ -97,7 +104,8 @@ class ChannelActorSpec extends ActorSpec with Mockito {
     def actor = actorRef.underlyingActor.asInstanceOf[ChannelActor]
     def state: (State, Data) = actorRef.stateName -> actorRef.stateData
     def disconnected(xs: OnChannel*) = Disconnected -> InMemory(Queue(xs: _*))
-    def connected(x: Channel = channel) = Connected -> Connected(x, None)
+    def blocked(ch: Channel, xs: OnChannel*) = Blocked -> Blocked(ch, Queue(xs: _*))
+    def connected(x: Channel = channel) = Connected -> Connected(x)
     def onChannelFailure(channel: Channel): Any = throw new IOException()
 
     class TestChannelActor extends ChannelActor(setupChannel) {

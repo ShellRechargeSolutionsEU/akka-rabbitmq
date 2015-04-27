@@ -1,8 +1,7 @@
 package com.thenewmotion.akka.rabbitmq
 
-import akka.actor.{FSM, ActorRef, Props}
-import com.thenewmotion.akka.rabbitmq.BlockedConnectionHandler.{QueueBlocked, QueueUnblocked}
-import com.thenewmotion.akka.rabbitmq.ChannelActor
+import akka.actor.{ ActorRef, FSM, Props }
+import com.thenewmotion.akka.rabbitmq.BlockedConnectionHandler.{ QueueBlocked, QueueUnblocked }
 import com.thenewmotion.akka.rabbitmq.ConnectionActor.ProvideChannel
 
 import scala.collection.immutable.Queue
@@ -37,23 +36,20 @@ object ChannelActor {
 }
 
 class ChannelActor(setupChannel: (Channel, ActorRef) => Any)
-  extends RabbitMqActor
-  with FSM[ChannelActor.State, ChannelActor.Data] {
+    extends RabbitMqActor
+    with FSM[ChannelActor.State, ChannelActor.Data] {
 
   import ChannelActor._
 
   type ThisState = FSM.State[ChannelActor.State, Data]
 
-  def sendQueuedMsgs(
-                      channel: Channel,
-                      nextState: ThisState,
-                      errorAction: (List[OnChannel]) => ThisState)
-                    (xs: List[OnChannel]): State = xs match {
-    case Nil => nextState
+  def sendQueuedMsgs(channel: Channel)(xs: List[OnChannel]): State = xs match {
+    case Nil => goto(Connected) using Connected(channel)
     case (h :: t) => safe(h(channel)) match {
-      case Some(_) => sendQueuedMsgs(channel, nextState, errorAction)(t)
+      case Some(_) => sendQueuedMsgs(channel)(t)
       case None =>
-        errorAction(t)
+        reconnect(channel)
+        goto(Disconnected) using InMemory(Queue(t: _*))
     }
   }
 
@@ -62,17 +58,8 @@ class ChannelActor(setupChannel: (Channel, ActorRef) => Any)
   when(Disconnected) {
     case Event(channel: Channel, InMemory(queue)) =>
       setup(channel)
-      def loop(xs: List[OnChannel]): State = xs match {
-        case Nil => goto(Connected) using Connected(channel)
-        case (h :: t) => safe(h(channel)) match {
-          case Some(_) => loop(t)
-          case None =>
-            reconnect(channel)
-            stay using InMemory(Queue(t: _*))
-        }
-      }
       if (queue.nonEmpty) log.debug("processing queued messages {}", queue.mkString("\n", "\n", ""))
-      loop(queue.toList)
+      sendQueuedMsgs(channel)(queue.toList)
 
     case Event(ChannelMessage(onChannel, dropIfNoChannel), InMemory(queue)) =>
       if (dropIfNoChannel) {
@@ -98,6 +85,7 @@ class ChannelActor(setupChannel: (Channel, ActorRef) => Any)
     case Event(ChannelMessage(f, _), Connected(channel)) =>
       safe(f(channel)) match {
         case None =>
+          println(s"Event(ChannelMessage($f, _), Connected($channel))")
           // Note that we do *not* retry f in this case because its failure might be due to some inherent problem with
           // f itself, and in that case a whole application might get stuck in a retry loop.
           reconnect(channel)
@@ -111,19 +99,17 @@ class ChannelActor(setupChannel: (Channel, ActorRef) => Any)
 
   when(Blocked) {
     case Event(QueueUnblocked, Blocked(channel, waiting)) =>
-
       if (waiting.nonEmpty) log.debug("processing queued messages {}", waiting.mkString("\n", "\n", ""))
-      sendQueuedMsgs(waiting.toList)
+      sendQueuedMsgs(channel)(waiting.toList)
 
     case Event(ChannelMessage(f, _), Blocked(channel, waiting)) =>
       stay() using Blocked(channel, waiting enqueue f)
 
-    // new state will be Connected => after queuing first message, rabbit executes block callback
+    // new state will be Connected => after queuing some messages message, rabbit executes block callback
     case Event(newChannel: Channel, Blocked(channel, waiting)) =>
       log.debug("closing unexpected channel {}", channel)
       closeIfOpen(channel)
-
-      stay using Connected(setup(newChannel), waiting)
+      sendQueuedMsgs(setup(channel))(waiting.toList)
 
     case Event(_: ShutdownSignal, Blocked(channel, waiting)) =>
       reconnect(channel)
@@ -134,7 +120,7 @@ class ChannelActor(setupChannel: (Channel, ActorRef) => Any)
     case Connected -> Disconnected => log.warning("{} disconnected", self.path)
   }
   onTermination {
-    case StopEvent(_, Connected, Connected(channel, _)) =>
+    case StopEvent(_, Connected, Connected(channel)) =>
       log.debug("closing channel {}", channel)
       closeIfOpen(channel)
   }

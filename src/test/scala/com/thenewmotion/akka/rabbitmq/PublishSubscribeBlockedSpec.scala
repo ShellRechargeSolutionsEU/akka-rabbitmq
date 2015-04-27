@@ -46,24 +46,26 @@ class PublishSubscribeBlockedSpec extends ActorSpec {
       connection ! CreateChannel(ChannelActor.props(setupSubscriber), Some("subscriber"))
       val ChannelCreated(subscriber) = expectMsgType[ChannelCreated]
 
+      def publishMessage(msg: Int, confirm: ActorRef): ChannelMessage = {
+        ChannelMessage(ch => {
+          ch.basicPublish(exchange, "", null, toBytes(msg))
+          confirm ! SuccessfullyQueued
+        }, dropIfNoChannel = false)
+      }
+
       val msgs = 1 to 33
-      msgs.map { x =>
-        publisher ! ChannelMessage(_.basicPublish(exchange, "", null, toBytes(x)), dropIfNoChannel = false)
-        expectMsg(SuccessfullyQueued)
+      msgs.foreach { x =>
+        publisher ! publishMessage(x, testActor)
       }
       connection ! QueueBlocked("test block")
-      Thread.sleep(10)
-      msgs.map { x =>
-        publisher ! ChannelMessage(_.basicPublish(exchange, "", null, toBytes(x)), dropIfNoChannel = false)
-        expectMsg(ConnectionIsBlocked)
+      msgs.foreach { x =>
+        publisher ! publishMessage(x, testActor)
       }
       connection ! QueueUnblocked
-      Thread.sleep(10)
-      msgs.map { x =>
-        publisher ! ChannelMessage(_.basicPublish(exchange, "", null, toBytes(x)), dropIfNoChannel = false)
-        expectMsg(SuccessfullyQueued)
+      msgs.foreach { x =>
+        publisher ! publishMessage(x, testActor)
       }
-      messageCollector.expectMsgAllOf(FiniteDuration(200, TimeUnit.SECONDS), List(msgs, msgs).flatten: _*)
+      messageCollector.expectMsgAllOf(FiniteDuration(100, TimeUnit.SECONDS), List(msgs, msgs, msgs).flatten: _*)
 
       def fromBytes(x: Array[Byte]) = new String(x, "UTF-8").toLong
 

@@ -43,11 +43,14 @@ class PublishSubscribeSpec extends ActorSpec {
 
       val msgs = 1 to 33
       msgs.foreach { x =>
-        publisher ! ChannelMessage(_.basicPublish(exchange, "", null, toBytes(x)), dropIfNoChannel = false)
+        publisher ! ChannelMessage(ch => {
+          ch.basicPublish(exchange, "", null, toBytes(x))
+          testActor ! SuccessfullyQueued
+        }, dropIfNoChannel = false)
       }
 
-      expectMsgAllOf(FiniteDuration(33, TimeUnit.SECONDS), List.fill(msgs.length)(SuccessfullyQueued): _*)
-      messageCollector.expectMsgAllOf(FiniteDuration(200, TimeUnit.SECONDS), msgs: _*)
+      expectMsgAllOf(FiniteDuration(33, TimeUnit.SECONDS), msgs.map(_ => SuccessfullyQueued): _*)
+      messageCollector.expectMsgAllOf(FiniteDuration(33, TimeUnit.SECONDS), msgs: _*)
 
       def fromBytes(x: Array[Byte]) = new String(x, "UTF-8").toLong
 
