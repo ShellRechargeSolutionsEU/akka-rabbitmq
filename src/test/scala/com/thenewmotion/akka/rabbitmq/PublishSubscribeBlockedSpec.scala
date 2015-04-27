@@ -65,7 +65,7 @@ class PublishSubscribeBlockedSpec extends ActorSpec {
       msgs.foreach { x =>
         publisher ! publishMessage(x, testActor)
       }
-      messageCollector.expectMsgAllOf(FiniteDuration(100, TimeUnit.SECONDS), List(msgs, msgs, msgs).flatten: _*)
+      messageCollector.expectMsgAllOf(FiniteDuration(200, TimeUnit.SECONDS), List(msgs, msgs, msgs).flatten: _*)
 
       def fromBytes(x: Array[Byte]) = new String(x, "UTF-8").toLong
 
