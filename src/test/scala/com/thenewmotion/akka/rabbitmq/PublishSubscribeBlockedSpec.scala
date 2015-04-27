@@ -4,20 +4,25 @@ import java.util.concurrent.TimeUnit
 
 import akka.actor.ActorRef
 import akka.testkit.TestProbe
-import com.thenewmotion.akka.rabbitmq.ChannelActor.SuccessfullyQueued
+import com.thenewmotion.akka.rabbitmq.BlockedConnectionHandler.{ QueueBlocked, QueueUnblocked }
+import com.thenewmotion.akka.rabbitmq.ChannelActor.{ ConnectionIsBlocked, SuccessfullyQueued }
 
 import scala.concurrent.duration.FiniteDuration
 
 /**
- * @author Yaroslav Klymko
+ * @author Mateusz Jaje
  */
-class PublishSubscribeSpec extends ActorSpec {
-  "PublishSubscribe" should {
+class PublishSubscribeBlockedSpec extends ActorSpec {
+  "PublishSubscribeBlock" should {
 
-    "Publish and Subscribe" in new TestScope {
+    "Be aware of Blocked Connection" in new TestScope {
       val factory = new ConnectionFactory()
-      val connection = system.actorOf(ConnectionActor.props(factory), "rabbitmq")
-      val exchange = "amq.direct"
+
+      private val props = ConnectionActor.props(
+        factory,
+        setupConnection = BlockedConnectionSupport.setupConnection)
+      val connection = system.actorOf(props, "rabbitmq")
+      val exchange = "amq.fanout"
 
       def setupPublisher(channel: Channel, self: ActorRef) {
         val queue = channel.queueDeclare().getQueue
@@ -41,16 +46,26 @@ class PublishSubscribeSpec extends ActorSpec {
       connection ! CreateChannel(ChannelActor.props(setupSubscriber), Some("subscriber"))
       val ChannelCreated(subscriber) = expectMsgType[ChannelCreated]
 
-      val msgs = 1 to 33
-      msgs.foreach { x =>
-        publisher ! ChannelMessage(ch => {
-          ch.basicPublish(exchange, "", null, toBytes(x))
-          testActor ! SuccessfullyQueued
+      def publishMessage(msg: Int, confirm: ActorRef): ChannelMessage = {
+        ChannelMessage(ch => {
+          ch.basicPublish(exchange, "", null, toBytes(msg))
+          confirm ! SuccessfullyQueued
         }, dropIfNoChannel = false)
       }
 
-      expectMsgAllOf(FiniteDuration(33, TimeUnit.SECONDS), msgs.map(_ => SuccessfullyQueued): _*)
-      messageCollector.expectMsgAllOf(FiniteDuration(33, TimeUnit.SECONDS), msgs: _*)
+      val msgs = 1 to 33
+      msgs.foreach { x =>
+        publisher ! publishMessage(x, testActor)
+      }
+      connection ! QueueBlocked("test block")
+      msgs.foreach { x =>
+        publisher ! publishMessage(x, testActor)
+      }
+      connection ! QueueUnblocked
+      msgs.foreach { x =>
+        publisher ! publishMessage(x, testActor)
+      }
+      messageCollector.expectMsgAllOf(FiniteDuration(200, TimeUnit.SECONDS), List(msgs, msgs, msgs).flatten: _*)
 
       def fromBytes(x: Array[Byte]) = new String(x, "UTF-8").toLong
 
