@@ -85,7 +85,6 @@ class ChannelActor(setupChannel: (Channel, ActorRef) => Any)
     case Event(ChannelMessage(f, _), Connected(channel)) =>
       safe(f(channel)) match {
         case None =>
-          println(s"Event(ChannelMessage($f, _), Connected($channel))")
           // Note that we do *not* retry f in this case because its failure might be due to some inherent problem with
           // f itself, and in that case a whole application might get stuck in a retry loop.
           reconnect(channel)
@@ -94,11 +93,13 @@ class ChannelActor(setupChannel: (Channel, ActorRef) => Any)
       }
 
     case Event(blocked: QueueBlocked, Connected(channel)) =>
+      log.warning(s"connection is blocked")
       goto(Blocked) using Blocked(channel)
   }
 
   when(Blocked) {
     case Event(QueueUnblocked, Blocked(channel, waiting)) =>
+      log.info(s"connection is unblocked")
       if (waiting.nonEmpty) log.debug("processing queued messages {}", waiting.mkString("\n", "\n", ""))
       sendQueuedMsgs(channel)(waiting.toList)
 
