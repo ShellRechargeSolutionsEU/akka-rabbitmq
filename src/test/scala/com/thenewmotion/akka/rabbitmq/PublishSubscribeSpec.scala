@@ -14,6 +14,12 @@ class PublishSubscribeSpec extends ActorSpec {
 
     "Publish and Subscribe" in new TestScope {
       val factory = new ConnectionFactory()
+      val config = com.typesafe.config.ConfigFactory.load().getConfig("rabbitmq")
+      factory.setHost(config.getString("host"))
+      factory.setPort(config.getInt("port"))
+      factory.setUsername(config.getString("username"))
+      factory.setPassword(config.getString("password"))
+
       val connection = system.actorOf(ConnectionActor.props(factory), "rabbitmq")
       val exchange = "amq.fanout"
 

@@ -10,3 +10,5 @@ target
 
 # Mac
 .DS_Store
+
+src/test/resources/application.conf
