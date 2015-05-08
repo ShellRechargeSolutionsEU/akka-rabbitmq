@@ -36,9 +36,33 @@ class ChannelActorSpec extends ActorSpec with Mockito {
       there was one(onChannel).apply(channel)
       state mustEqual connected()
     }
-    "process message if has channel and reconnect if failed" in new TestScope {
+    "process message if has channel, and when fails but channel is still open, drops the message and reconnects" in new TestScope {
       actorRef.setState(Connected, Connected(channel))
-      actorRef ! ChannelMessage(onChannelFailure)
+      actorRef ! ChannelMessage(onChannelFailure, dropIfNoChannel = false)
+      state mustEqual disconnected()
+      expectMsg(ProvideChannel)
+    }
+    "process message if has channel, and when fails and channel is not open, retains the message for retry and reconnects" in new TestScope {
+      actorRef.setState(Connected, Connected(closedChannel))
+      actorRef ! ChannelMessage(onChannelFailure, dropIfNoChannel = false)
+      state mustEqual disconnected(Retrying(3, onChannelFailure))
+      expectMsg(ProvideChannel)
+    }
+    "process message if has channel, and when fails and channel is not open, retains the message with retry count decremented and reconnects" in new TestScope {
+      actorRef.setState(Connected, Connected(closedChannel))
+      actorRef ! ChannelMessage(Retrying(2, onChannelFailure), dropIfNoChannel = false)
+      state mustEqual disconnected(Retrying(1, onChannelFailure))
+      expectMsg(ProvideChannel)
+    }
+    "process message if has channel, and when fails and channel is not open and retry count is 0, drops the message and reconnects" in new TestScope {
+      actorRef.setState(Connected, Connected(closedChannel))
+      actorRef ! ChannelMessage(Retrying(0, onChannelFailure), dropIfNoChannel = false)
+      state mustEqual disconnected()
+      expectMsg(ProvideChannel)
+    }
+    "process message if has channel, and when fails and channel is not open and dropIfNoChannel is true, drops the message and reconnects" in new TestScope {
+      actorRef.setState(Connected, Connected(closedChannel))
+      actorRef ! ChannelMessage(onChannelFailure, dropIfNoChannel = true)
       state mustEqual disconnected()
       expectMsg(ProvideChannel)
     }
@@ -91,6 +115,11 @@ class ChannelActorSpec extends ActorSpec with Mockito {
       channel.isOpen returns true
       channel
     }
+    val closedChannel = {
+      val channel = mock[Channel]
+      channel.isOpen returns false
+      channel
+    }
     val shutdownSignal = mock[ShutdownSignalException]
     val actorRef = TestFSMRef(new TestChannelActor)
 
@@ -98,7 +127,7 @@ class ChannelActorSpec extends ActorSpec with Mockito {
     def state: (State, Data) = actorRef.stateName -> actorRef.stateData
     def disconnected(xs: OnChannel*) = Disconnected -> InMemory(Queue(xs: _*))
     def connected(x: Channel = channel) = Connected -> Connected(x)
-    def onChannelFailure(channel: Channel): Any = throw new IOException()
+    val onChannelFailure: Channel => Any = { channel => throw new IOException() }
 
     class TestChannelActor extends ChannelActor(setupChannel) {
       override def connectionActor = testActor
