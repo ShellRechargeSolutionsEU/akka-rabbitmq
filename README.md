@@ -221,3 +221,6 @@ object PublishSubscribe extends App {
 }
 ```
 
+# Other Libraries
+
+Akka-RabbitMQ is a low-level library, and leaves it to the coder to manually wire consumers, serialize messages, etc. If you'd like a higher-level abstraction library, look at [Op-Rabbit](https://github.com/SpinGo/op-rabbit.git) (which uses this library).
