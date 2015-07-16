@@ -38,65 +38,72 @@ class ConnectionActor(
 
   startWith(Disconnected, NoConnection)
 
+  private def header(state: ConnectionActor.State, msg: Any) = s"${self.path} in $state recieved $msg:"
+
   when(Disconnected) {
     case Event(Connect, _) =>
       safe(setup).getOrElse {
-        log.error("can't connect to {}, retrying in {}", factory.uri, reconnectionDelay)
+        log.error("{} can't connect to {}, retrying in {}",
+          header(Disconnected, Connect), factory.uri, reconnectionDelay)
         setTimer(reconnectTimer, Connect, reconnectionDelay, repeat = false)
         stay()
       }
 
-    case Event(CreateChannel(props, name), _) =>
+    case Event(msg@CreateChannel(props, name), _) =>
       val child = newChild(props, name)
-      log.debug("creating child {} in disconnected state", child)
+      log.debug("{} creating child {} in disconnected state", header(Disconnected, msg), child)
       stay replying ChannelCreated(child)
 
     case Event(_: AmqpShutdownSignal, _) => stay()
 
-    case Event(ProvideChannel, _) =>
-      log.debug("can't create channel for {} in disconnected state", sender)
+    case Event(msg@ProvideChannel, _) =>
+      log.debug("{} can't create channel for {} in disconnected state", header(Disconnected, msg), sender())
       stay()
   }
   when(Connected) {
-    case Event(ProvideChannel, Connected(connection)) =>
+    case Event(msg@ProvideChannel, Connected(connection)) =>
       safe(connection.createChannel()) match {
-        case Some(channel) => stay replying channel
+        case Some(channel) =>
+          log.debug("{} channel acquired", header(Connected, msg))
+          stay replying channel
         case None =>
+          log.debug("{} no channel acquired. ", header(Connected, msg))
           reconnect(connection)
           goto(Disconnected) using NoConnection
       }
 
-    case Event(CreateChannel(props, name), Connected(connection)) =>
+    case Event(msg@CreateChannel(props, name), Connected(connection)) =>
       safe(connection.createChannel()) match {
         case Some(channel) =>
           val child = newChild(props, name)
-          log.debug("creating child {} with channel {}", child, channel)
+          log.debug("{} creating child {} with channel {}", header(Connected, msg), child, channel)
           child ! channel
           stay replying ChannelCreated(child)
         case None =>
           val child = newChild(props, name)
           reconnect(connection)
-          log.debug("creating child {} without channel", child)
+          log.debug("{} creating child {} without channel", header(Connected, msg), child)
           goto(Disconnected) using NoConnection replying ChannelCreated(child)
       }
 
-    case Event(AmqpShutdownSignal(cause), Connected(connection)) =>
+    case Event(msg@AmqpShutdownSignal(cause), Connected(connection)) =>
+      log.debug("{} shutdown (initiated by app {})", header(Connected, msg), cause.isInitiatedByApplication)
       if (!cause.isInitiatedByApplication) reconnect(connection)
       goto(Disconnected) using NoConnection
   }
   onTransition {
-    case Connected -> Disconnected => log.warning("lost connection to {}", factory.uri)
-    case Disconnected -> Connected => log.info("connected to {}", factory.uri)
+    case Connected -> Disconnected => log.warning("{} lost connection to {}", self.path, factory.uri)
+    case Disconnected -> Connected => log.info("{} connected to {}", self.path, factory.uri)
   }
   onTermination {
     case StopEvent(_, Connected, Connected(connection)) =>
       log.info("closing connection to {}", factory.uri)
       closeIfOpen(connection)
   }
-  initialize
+  initialize()
 
   def reconnect(broken: Connection) {
-    log.debug("closing broken connection {}", broken)
+    log.debug("{} closing broken connection {}", self.path, broken)
     closeIfOpen(broken)
     self ! Connect
     children.foreach(_ ! ParentShutdownSignal)
