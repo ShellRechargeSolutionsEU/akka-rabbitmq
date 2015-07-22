@@ -96,7 +96,7 @@ class ChannelActor(setupChannel: (Channel, ActorRef) => Any)
         header(Disconnected, channel), queue.mkString("\n", "\n", ""))
       loop(queue.toList)
 
-    case Event(msg@ChannelMessage(onChannel, dropIfNoChannel), InMemory(queue)) =>
+    case Event(msg @ ChannelMessage(onChannel, dropIfNoChannel), InMemory(queue)) =>
       if (dropIfNoChannel) {
         log.debug("{} dropping message {}", header(Disconnected, msg), onChannel)
         stay()
@@ -118,7 +118,7 @@ class ChannelActor(setupChannel: (Channel, ActorRef) => Any)
       reconnect(channel)
       goto(Disconnected) using InMemory()
 
-    case Event(cm@ChannelMessage(f, _), Connected(channel)) =>
+    case Event(cm @ ChannelMessage(f, _), Connected(channel)) =>
       val res = safeWithRetry(channel, f)
       log.debug("{} received channel message resulted in {}", header(Connected, cm), res)
       res match {

@@ -38,7 +38,7 @@ class ConnectionActor(
 
   startWith(Disconnected, NoConnection)
 
-  private def header(state: ConnectionActor.State, msg: Any) = s"${self.path} in $state recieved $msg:"
+  private def header(state: ConnectionActor.State, msg: Any) = s"${self.path} in $state received $msg:"
 
   when(Disconnected) {
     case Event(Connect, _) =>
@@ -49,19 +49,19 @@ class ConnectionActor(
         stay()
       }
 
-    case Event(msg@CreateChannel(props, name), _) =>
+    case Event(msg @ CreateChannel(props, name), _) =>
       val child = newChild(props, name)
       log.debug("{} creating child {} in disconnected state", header(Disconnected, msg), child)
       stay replying ChannelCreated(child)
 
     case Event(_: AmqpShutdownSignal, _) => stay()
 
-    case Event(msg@ProvideChannel, _) =>
+    case Event(msg @ ProvideChannel, _) =>
       log.debug("{} can't create channel for {} in disconnected state", header(Disconnected, msg), sender())
       stay()
   }
   when(Connected) {
-    case Event(msg@ProvideChannel, Connected(connection)) =>
+    case Event(msg @ ProvideChannel, Connected(connection)) =>
       safe(connection.createChannel()) match {
         case Some(channel) =>
           log.debug("{} channel acquired", header(Connected, msg))
@@ -72,7 +72,7 @@ class ConnectionActor(
           goto(Disconnected) using NoConnection
       }
 
-    case Event(msg@CreateChannel(props, name), Connected(connection)) =>
+    case Event(msg @ CreateChannel(props, name), Connected(connection)) =>
       safe(connection.createChannel()) match {
         case Some(channel) =>
           val child = newChild(props, name)
@@ -89,20 +89,23 @@ class ConnectionActor(
     // we ignore shutdowns by application. It's either this actor itself, in which case it has a plan and all is fine,
     // or some hooligan who is deliberately causing trouble. In the latter case we will be notified again when a
     // subsequent ChannelMessage using this connection fails, and we can go to Disconnected and reconnect then.
-    case Event(msg@AmqpShutdownSignal(cause), Connected(connection)) if !cause.isInitiatedByApplication =>
+    case Event(msg @ AmqpShutdownSignal(cause), Connected(connection)) if !cause.isInitiatedByApplication =>
       log.debug("{} shutdown (initiated by app {})", header(Connected, msg), cause.isInitiatedByApplication)
       dropCurrentConnectionAndInitiateReconnect(connection)
       goto(Disconnected) using NoConnection
   }
+
   onTransition {
     case Connected -> Disconnected => log.warning("{} lost connection to {}", self.path, factory.uri)
     case Disconnected -> Connected => log.info("{} connected to {}", self.path, factory.uri)
   }
+
   onTermination {
     case StopEvent(_, Connected, Connected(connection)) =>
       log.info("closing connection to {}", factory.uri)
       closeIfOpen(connection)
   }
+
   initialize()
 
   def dropCurrentConnectionAndInitiateReconnect(current: Connection) {
