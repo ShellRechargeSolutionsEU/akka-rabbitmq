@@ -113,7 +113,7 @@ class ChannelActor(setupChannel: (Channel, ActorRef) => Any)
       closeIfOpen(channel)
       stay using Connected(setup(newChannel))
 
-    case Event(msg: ShutdownSignal, Connected(channel)) =>
+    case Event(msg: ShutdownSignal, Connected(channel)) if shutdownSignalAppliesToChannel(msg) =>
       log.debug("{} shutdown", header(Connected, msg))
       reconnect(channel)
       goto(Disconnected) using InMemory()
@@ -161,4 +161,12 @@ class ChannelActor(setupChannel: (Channel, ActorRef) => Any)
   }
 
   def connectionActor = context.parent
+
+  val shutdownSignalAppliesToChannel: ShutdownSignal => Boolean = {
+    case ParentShutdownSignal      => true
+
+    // connection-level ("hard") errors should be handled by the COnnection Actor, which will send this actor a
+    // ParentShutdownSignal when this actor is supposed to do something
+    case AmqpShutdownSignal(cause) => !cause.isHardError
+  }
 }

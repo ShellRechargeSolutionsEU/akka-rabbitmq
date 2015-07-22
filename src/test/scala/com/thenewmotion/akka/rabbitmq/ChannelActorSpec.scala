@@ -76,19 +76,24 @@ class ChannelActorSpec extends ActorSpec with Mockito {
     }
     "leave channel if told by parent" in new TestScope {
       actorRef.setState(Connected, Connected(channel))
-      actorRef ! AmqpShutdownSignal(shutdownSignal)
+      actorRef ! ParentShutdownSignal
       state mustEqual disconnected()
       expectMsg(ProvideChannel)
     }
     "leave channel on ShutdownSignal" in new TestScope {
       actorRef.setState(Connected, Connected(channel))
-      actor.shutdownCompleted(shutdownSignal)
+      actor.shutdownCompleted(channelShutdownSignal)
       state mustEqual disconnected()
       expectMsg(ProvideChannel)
     }
+    "stay connected on connection-level ShutdownSignal (waiting for ParentShutdown from ConnectionActor)" in new TestScope {
+      actorRef.setState(Connected, Connected(channel))
+      actor.shutdownCompleted(connectionShutdownSignal)
+      state mustEqual connected()
+    }
     "aks for channel on ShutdownSignal" in new TestScope {
       actorRef.setState(Connected, Connected(channel))
-      actor.shutdownCompleted(shutdownSignal)
+      actor.shutdownCompleted(channelShutdownSignal)
       state mustEqual disconnected()
       expectMsg(ProvideChannel)
     }
@@ -120,7 +125,12 @@ class ChannelActorSpec extends ActorSpec with Mockito {
       channel.isOpen returns false
       channel
     }
-    val shutdownSignal = mock[ShutdownSignalException]
+    val channelShutdownSignal = mock[ShutdownSignalException]
+    channelShutdownSignal.isHardError() returns false
+
+    val connectionShutdownSignal = mock[ShutdownSignalException]
+    connectionShutdownSignal.isHardError() returns true
+
     val actorRef = TestFSMRef(new TestChannelActor)
 
     def actor = actorRef.underlyingActor.asInstanceOf[ChannelActor]
