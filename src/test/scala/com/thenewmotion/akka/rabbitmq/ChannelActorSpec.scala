@@ -91,12 +91,6 @@ class ChannelActorSpec extends ActorSpec with Mockito {
       actor.shutdownCompleted(connectionShutdownSignal)
       state mustEqual connected()
     }
-    "aks for channel on ShutdownSignal" in new TestScope {
-      actorRef.setState(Connected, Connected(channel))
-      actor.shutdownCompleted(channelShutdownSignal)
-      state mustEqual disconnected()
-      expectMsg(ProvideChannel)
-    }
     "process queued channel messages when channel received" in new TestScope {
       actorRef.setState(Disconnected, InMemory(Queue(onChannel, onChannel)))
       actorRef ! channel
