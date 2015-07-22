@@ -68,7 +68,7 @@ class ConnectionActor(
           stay replying channel
         case None =>
           log.debug("{} no channel acquired. ", header(Connected, msg))
-          reconnect(connection)
+          dropCurrentConnectionAndInitiateReconnect(connection)
           goto(Disconnected) using NoConnection
       }
 
@@ -81,14 +81,17 @@ class ConnectionActor(
           stay replying ChannelCreated(child)
         case None =>
           val child = newChild(props, name)
-          reconnect(connection)
+          dropCurrentConnectionAndInitiateReconnect(connection)
           log.debug("{} creating child {} without channel", header(Connected, msg), child)
           goto(Disconnected) using NoConnection replying ChannelCreated(child)
       }
 
-    case Event(msg@AmqpShutdownSignal(cause), Connected(connection)) =>
+    // we ignore shutdowns by application. It's either this actor itself, in which case it has a plan and all is fine,
+    // or some hooligan who is deliberately causing trouble. In the latter case we will be notified again when a
+    // subsequent ChannelMessage using this connection fails, and we can go to Disconnected and reconnect then.
+    case Event(msg@AmqpShutdownSignal(cause), Connected(connection)) if !cause.isInitiatedByApplication =>
       log.debug("{} shutdown (initiated by app {})", header(Connected, msg), cause.isInitiatedByApplication)
-      if (!cause.isInitiatedByApplication) reconnect(connection)
+      dropCurrentConnectionAndInitiateReconnect(connection)
       goto(Disconnected) using NoConnection
   }
   onTransition {
@@ -102,9 +105,10 @@ class ConnectionActor(
   }
   initialize()
 
-  def reconnect(broken: Connection) {
-    log.debug("{} closing broken connection {}", self.path, broken)
-    closeIfOpen(broken)
+  def dropCurrentConnectionAndInitiateReconnect(current: Connection) {
+    log.debug("{} closing broken connection {}", self.path, current)
+    closeIfOpen(current)
+
     self ! Connect
     children.foreach(_ ! ParentShutdownSignal)
   }
