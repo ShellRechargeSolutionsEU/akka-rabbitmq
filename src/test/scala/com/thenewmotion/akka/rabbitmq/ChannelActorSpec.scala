@@ -120,10 +120,10 @@ class ChannelActorSpec extends ActorSpec with Mockito {
       channel
     }
     val channelShutdownSignal = mock[ShutdownSignalException]
-    channelShutdownSignal.isHardError() returns false
+    channelShutdownSignal.getReference returns channel
 
     val connectionShutdownSignal = mock[ShutdownSignalException]
-    connectionShutdownSignal.isHardError() returns true
+    connectionShutdownSignal.getReference returns mock[Connection]
 
     val actorRef = TestFSMRef(new TestChannelActor)
 

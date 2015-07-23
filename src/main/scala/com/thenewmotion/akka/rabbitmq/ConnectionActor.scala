@@ -86,13 +86,17 @@ class ConnectionActor(
           goto(Disconnected) using NoConnection replying ChannelCreated(child)
       }
 
-    // we ignore shutdowns by application. It's either this actor itself, in which case it has a plan and all is fine,
-    // or some hooligan who is deliberately causing trouble. In the latter case we will be notified again when a
-    // subsequent ChannelMessage using this connection fails, and we can go to Disconnected and reconnect then.
-    case Event(msg @ AmqpShutdownSignal(cause), Connected(connection)) if !cause.isInitiatedByApplication =>
-      log.debug("{} shutdown (initiated by app {})", header(Connected, msg), cause.isInitiatedByApplication)
-      dropCurrentConnectionAndInitiateReconnect(connection)
-      goto(Disconnected) using NoConnection
+    case Event(msg @ AmqpShutdownSignal(cause), Connected(connection)) =>
+      // It is important that we check if a shutdown signal pertains to the current connection.
+      // This actor explicitly close the connection ourselves before reconnecting. So if this actor starts to reconnect
+      // in a situation where the connection is still open, it closes it and RabbitMQ will send the actor a
+      // ShutdownSignal. This ShutdownSignal may reach this actor when it already has a new connection, in which case
+      // the actor should of course not act upon it.
+      if (msg.appliesTo(connection)) {
+        log.debug("{} shutdown (initiated by app {})", header(Connected, msg), cause.isInitiatedByApplication)
+        dropCurrentConnectionAndInitiateReconnect(connection)
+        goto(Disconnected) using NoConnection
+      } else stay()
   }
 
   onTransition {

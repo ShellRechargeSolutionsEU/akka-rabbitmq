@@ -113,10 +113,12 @@ class ChannelActor(setupChannel: (Channel, ActorRef) => Any)
       closeIfOpen(channel)
       stay using Connected(setup(newChannel))
 
-    case Event(msg: ShutdownSignal, Connected(channel)) if shutdownSignalAppliesToCurrentChannel(msg) =>
-      log.debug("{} shutdown", header(Connected, msg))
-      reconnect(channel)
-      goto(Disconnected) using InMemory()
+    case Event(msg: ShutdownSignal, Connected(channel)) =>
+      if (shutdownSignalAppliesToCurrentChannel(msg, channel)) {
+        log.debug("{} shutdown", header(Connected, msg))
+        reconnect(channel)
+        goto(Disconnected) using InMemory()
+      } else stay()
 
     case Event(cm @ ChannelMessage(f, _), Connected(channel)) =>
       val res = safeWithRetry(channel, f)
@@ -162,13 +164,10 @@ class ChannelActor(setupChannel: (Channel, ActorRef) => Any)
 
   def connectionActor = context.parent
 
-  val shutdownSignalAppliesToCurrentChannel: ShutdownSignal => Boolean = {
-    case ParentShutdownSignal      => true
+  def shutdownSignalAppliesToCurrentChannel(shutdownSignal: ShutdownSignal, currentChannel: Channel): Boolean =
+    shutdownSignal match {
+      case ParentShutdownSignal           => true
 
-    // connection-level ("hard") errors should be handled by the COnnection Actor, which will send this actor a
-    // ParentShutdownSignal when this actor is supposed to do something
-    // initiated-by-application errors are normally caused by our own reconnection procedure. If they're not, we can
-    // reconnect as soon as we attempt to use the closed channel and fail.
-    case AmqpShutdownSignal(cause) => !(cause.isHardError || cause.isInitiatedByApplication)
-  }
+      case amqpSignal: AmqpShutdownSignal => amqpSignal.appliesTo(currentChannel)
+    }
 }

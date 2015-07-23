@@ -19,17 +19,17 @@ class ConnectionActorSpec extends ActorSpec with Mockito with NoTimeConversions 
 
     "try to connect on startup" in new TestScope {
       actorRef ! Connect
-      state mustEqual connected
-      val order = inOrder(factory, connection, setup, actor)
+      state mustEqual connectedAfterRecovery
+      val order = inOrder(factory, recoveredConnection, setup, actor)
       there was one(factory).newConnection()
-      there was one(connection).addShutdownListener(any)
-      there was one(setup).apply(connection, actorRef)
+      there was one(recoveredConnection).addShutdownListener(any)
+      there was one(setup).apply(recoveredConnection, actorRef)
     }
 
     "not reconnect if has connection" in new TestScope {
-      actorRef.setState(Connected, Connected(connection))
+      actorRef.setState(Connected, Connected(initialConnection))
       actorRef ! Connect
-      state mustEqual connected
+      state mustEqual connectedInitially
     }
 
     "try to reconnect if failed to connect" in new TestScope {
@@ -39,49 +39,51 @@ class ConnectionActorSpec extends ActorSpec with Mockito with NoTimeConversions 
     }
 
     "try to reconnect if can't create new channel" in new TestScope {
-      connection.createChannel() throws new IOException
-      actorRef.setState(Connected, Connected(connection))
+      initialConnection.createChannel() throws new IOException
+      recoveredConnection.createChannel() throws new IOException
+      actorRef.setState(Connected, Connected(initialConnection))
       actorRef ! create
       state mustEqual disconnected
     }
 
     "attempt to connect on Connect message" in new TestScope {
-      factory.newConnection throws new IOException thenReturns connection
+      factory.newConnection throws new IOException thenReturns recoveredConnection
       actorRef ! Connect
       state mustEqual disconnected
       actorRef ! Connect
-      state mustEqual connected
+      state mustEqual connectedAfterRecovery
     }
 
     "reconnect on ShutdownSignalException from server" in new TestScope {
-      actorRef.setState(Connected, Connected(connection))
+      actorRef.setState(Connected, Connected(initialConnection))
       actor.shutdownCompleted(shutdownSignal())
-      state mustEqual connected
+      state mustEqual connectedAfterRecovery
     }
 
     "keep trying to reconnect on ShutdownSignalException from server" in new TestScope {
-      actorRef.setState(Connected, Connected(connection))
-      factory.newConnection throws new IOException thenThrow new IOException thenReturns connection
+      actorRef.setState(Connected, Connected(initialConnection))
+      factory.newConnection throws new IOException thenThrow new IOException thenReturns recoveredConnection
       actor.shutdownCompleted(shutdownSignal())
       state mustEqual disconnected
     }
 
-    "not reconnect on ShutdownSignalException from client" in new TestScope {
-      actorRef.setState(Connected, Connected(connection))
-      actor.shutdownCompleted(shutdownSignal(initiatedByApplication = true))
+    "not reconnect on ShutdownSignalException for different connection" in new TestScope {
+      actorRef.setState(Connected, Connected(initialConnection))
+      actor.shutdownCompleted(shutdownSignal(reference = mock[Connection]))
       there was no(factory).newConnection()
     }
 
     "create children actor with channel" in new TestScope {
-      actorRef.setState(Connected, Connected(connection))
+      actorRef.setState(Connected, Connected(initialConnection))
       actorRef ! create
       expectMsg(channel)
       expectMsg(ChannelCreated(testActor))
     }
 
     "create children actor without channel if failed to create new channel" in new TestScope {
-      connection.createChannel() throws new IOException
-      actorRef.setState(Connected, Connected(connection))
+      initialConnection.createChannel() throws new IOException
+      recoveredConnection.createChannel() throws new IOException
+      actorRef.setState(Connected, Connected(initialConnection))
       actorRef ! create
       expectMsg(ParentShutdownSignal)
       expectMsg(ChannelCreated(testActor))
@@ -94,7 +96,7 @@ class ConnectionActorSpec extends ActorSpec with Mockito with NoTimeConversions 
     }
 
     "notify children if connection lost" in new TestScope {
-      actorRef.setState(Connected, Connected(connection))
+      actorRef.setState(Connected, Connected(initialConnection))
       actor.shutdownCompleted(shutdownSignal())
       expectMsg(ParentShutdownSignal)
     }
@@ -105,14 +107,14 @@ class ConnectionActorSpec extends ActorSpec with Mockito with NoTimeConversions 
     }
 
     "close connection on shutdown" in new TestScope {
-      actorRef.setState(Connected, Connected(connection))
+      actorRef.setState(Connected, Connected(initialConnection))
       actorRef.stop()
-      there was one(connection).close()
+      there was one(initialConnection).close()
     }
 
     "not become Disconnected when getting an AmqpShutdownSignal because of its own reconnection procedure" in new TestScope {
       // connection actor starts out connected
-      actorRef.setState(Connected, Connected(connection))
+      actorRef.setState(Connected, Connected(initialConnection))
 
       // give it a channel actor
       actorRef ! create
@@ -127,11 +129,11 @@ class ConnectionActorSpec extends ActorSpec with Mockito with NoTimeConversions 
 
       // give connection actor the time to close and reconnect
       expectMsg(ParentShutdownSignal)
-      there was one(connection).close()
+      there was one(initialConnection).close()
       expectMsg(channel)
 
-      // now because of this close, RabbitMQ will tell the actor that the connection was shut down by the app
-      actor.shutdownCompleted(shutdownSignal(initiatedByApplication = true))
+      // now because of this close, RabbitMQ may tell the actor that the previous connection was shut down by the app
+      actor.shutdownCompleted(shutdownSignal(initiatedByApplication = true, reference = initialConnection))
 
       // now, let's see if the ConnectionActor stays responsive
       actorRef ! ProvideChannel
@@ -141,15 +143,20 @@ class ConnectionActorSpec extends ActorSpec with Mockito with NoTimeConversions 
 
   private abstract class TestScope extends ActorScope {
     val channel = mock[Channel]
-    val connection = {
+
+    def createMockConnection() = {
       val connection = mock[Connection]
       connection.isOpen returns true
       connection.createChannel() returns channel
       connection
     }
+
+    val initialConnection = createMockConnection()
+    val recoveredConnection = createMockConnection()
+
     val factory = {
       val factory = mock[ConnectionFactory]
-      factory.newConnection() returns connection
+      factory.newConnection() returns recoveredConnection
       factory
     }
     val create = CreateChannel(null)
@@ -160,11 +167,13 @@ class ConnectionActorSpec extends ActorSpec with Mockito with NoTimeConversions 
     def actor = actorRef.underlyingActor.asInstanceOf[ConnectionActor]
     def state: (State, Data) = actorRef.stateName -> actorRef.stateData
     def disconnected = Disconnected -> NoConnection
-    def connected = Connected -> Connected(connection)
+    def connectedInitially = Connected -> Connected(initialConnection)
+    def connectedAfterRecovery = Connected -> Connected(recoveredConnection)
 
-    def shutdownSignal(initiatedByApplication: Boolean = false) = {
+    def shutdownSignal(initiatedByApplication: Boolean = false, reference: AnyRef = initialConnection) = {
       val shutdownSignal = mock[ShutdownSignalException]
       shutdownSignal.isInitiatedByApplication returns initiatedByApplication
+      shutdownSignal.getReference returns reference
       shutdownSignal
     }
 
