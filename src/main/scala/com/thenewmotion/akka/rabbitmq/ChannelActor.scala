@@ -85,10 +85,10 @@ class ChannelActor(setupChannel: (Channel, ActorRef) => Any)
           res match {
             case ProcessSuccess(_) => loop(t)
             case ProcessFailureRetry(retry) =>
-              reconnect(channel)
+              dropChannelAndRequestNewChannel(channel)
               stay using InMemory(Queue(retry :: t: _*))
             case ProcessFailureDrop =>
-              reconnect(channel)
+              dropChannelAndRequestNewChannel(channel)
               stay using InMemory(Queue(t: _*))
           }
       }
@@ -114,9 +114,9 @@ class ChannelActor(setupChannel: (Channel, ActorRef) => Any)
       stay using Connected(setup(newChannel))
 
     case Event(msg: ShutdownSignal, Connected(channel)) =>
-      if (shutdownSignalAppliesToCurrentChannel(msg, channel)) {
+      if (shutdownSignalAppliesToChannel(msg, channel)) {
         log.debug("{} shutdown", header(Connected, msg))
-        reconnect(channel)
+        dropChannelAndRequestNewChannel(channel)
         goto(Disconnected) using InMemory()
       } else stay()
 
@@ -126,10 +126,10 @@ class ChannelActor(setupChannel: (Channel, ActorRef) => Any)
       res match {
         case ProcessSuccess(_) => stay()
         case ProcessFailureRetry(retry) if !cm.dropIfNoChannel =>
-          reconnect(channel)
+          dropChannelAndRequestNewChannel(channel)
           goto(Disconnected) using InMemory(Queue(retry))
         case _ =>
-          reconnect(channel)
+          dropChannelAndRequestNewChannel(channel)
           goto(Disconnected) using InMemory()
       }
   }
@@ -151,7 +151,7 @@ class ChannelActor(setupChannel: (Channel, ActorRef) => Any)
     channel
   }
 
-  def reconnect(broken: Channel) {
+  def dropChannelAndRequestNewChannel(broken: Channel) {
     log.debug("{} closing broken channel {}", self.path, broken)
     closeIfOpen(broken)
     askForChannel()
@@ -164,10 +164,10 @@ class ChannelActor(setupChannel: (Channel, ActorRef) => Any)
 
   def connectionActor = context.parent
 
-  def shutdownSignalAppliesToCurrentChannel(shutdownSignal: ShutdownSignal, currentChannel: Channel): Boolean =
+  def shutdownSignalAppliesToChannel(shutdownSignal: ShutdownSignal, channel: Channel): Boolean =
     shutdownSignal match {
       case ParentShutdownSignal           => true
 
-      case amqpSignal: AmqpShutdownSignal => amqpSignal.appliesTo(currentChannel)
+      case amqpSignal: AmqpShutdownSignal => amqpSignal.appliesTo(channel)
     }
 }

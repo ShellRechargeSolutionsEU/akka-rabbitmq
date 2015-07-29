@@ -68,7 +68,7 @@ class ConnectionActor(
           stay replying channel
         case None =>
           log.debug("{} no channel acquired. ", header(Connected, msg))
-          dropCurrentConnectionAndInitiateReconnect(connection)
+          dropConnectionAndInitiateReconnect(connection)
           goto(Disconnected) using NoConnection
       }
 
@@ -81,7 +81,7 @@ class ConnectionActor(
           stay replying ChannelCreated(child)
         case None =>
           val child = newChild(props, name)
-          dropCurrentConnectionAndInitiateReconnect(connection)
+          dropConnectionAndInitiateReconnect(connection)
           log.debug("{} creating child {} without channel", header(Connected, msg), child)
           goto(Disconnected) using NoConnection replying ChannelCreated(child)
       }
@@ -94,7 +94,7 @@ class ConnectionActor(
       // the actor should of course not act upon it.
       if (msg.appliesTo(connection)) {
         log.debug("{} shutdown (initiated by app {})", header(Connected, msg), cause.isInitiatedByApplication)
-        dropCurrentConnectionAndInitiateReconnect(connection)
+        dropConnectionAndInitiateReconnect(connection)
         goto(Disconnected) using NoConnection
       } else stay()
   }
@@ -112,9 +112,9 @@ class ConnectionActor(
 
   initialize()
 
-  def dropCurrentConnectionAndInitiateReconnect(current: Connection) {
-    log.debug("{} closing broken connection {}", self.path, current)
-    closeIfOpen(current)
+  def dropConnectionAndInitiateReconnect(connection: Connection) {
+    log.debug("{} closing broken connection {}", self.path, connection)
+    closeIfOpen(connection)
 
     self ! Connect
     children.foreach(_ ! ParentShutdownSignal)
