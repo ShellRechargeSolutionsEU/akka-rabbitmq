@@ -7,7 +7,7 @@ licenses := Seq(("Apache License, Version 2.0", url("http://www.apache.org/licen
 homepage := Some(new URL("https://github.com/thenewmotion/akka-rabbitmq"))
 
 libraryDependencies ++= {
-  val akkaVersion = "2.3.12"
+  val akkaVersion = "2.4.0"
 
   Seq(
     "com.typesafe.akka" %% "akka-actor" % akkaVersion,
