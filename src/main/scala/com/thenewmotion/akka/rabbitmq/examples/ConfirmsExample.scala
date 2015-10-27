@@ -6,7 +6,7 @@ import akka.pattern.ask
 import akka.util.Timeout
 import com.rabbitmq.client.{ MessageProperties, ConfirmListener }
 import scala.collection.mutable
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ Await, ExecutionContext }
 import scala.concurrent.duration._
 
 /**
@@ -100,8 +100,7 @@ object ConfirmsExample extends App {
   /* --- Letting the app run --- */
 
   Thread.sleep(7000)
-  system.shutdown()
-  system.awaitTermination()
+  Await.result(system.terminate(), 1.second)
 
   System.out.println(s"Unconfirmed messages: ${unconfirmed.mkString(", ")}")
 }

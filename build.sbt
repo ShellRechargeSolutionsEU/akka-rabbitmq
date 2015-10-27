@@ -1,7 +1,11 @@
+import tnm.ScalaVersion
+
 organization := "com.thenewmotion.akka"
 name := "akka-rabbitmq"
 
 enablePlugins(OssLibPlugin)
+
+crossScalaVersions := Seq(ScalaVersion.curr)
 
 licenses := Seq(("Apache License, Version 2.0", url("http://www.apache.org/licenses/LICENSE-2.0")))
 homepage := Some(new URL("https://github.com/thenewmotion/akka-rabbitmq"))

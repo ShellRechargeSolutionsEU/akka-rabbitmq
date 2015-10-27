@@ -42,7 +42,8 @@ libraryDependencies += "com.thenewmotion.akka" %% "akka-rabbitmq" % "1.2.4"
 <dependency>
     <groupId>com.thenewmotion.akka</groupId>
     <artifactId>akka-rabbitmq_{2.10/2.11}</artifactId>
-    <version>1.2.4</version>
+    <!-- use version 2.0 for Akka 2.4.x, or 1.2.7 for Akka 2.3.x -->
+    <version>2.0</version>
 </dependency>
 ```
 

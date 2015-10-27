@@ -2,6 +2,8 @@ package com.thenewmotion.akka.rabbitmq
 package examples
 
 import akka.actor.{ Actor, ActorRef, Props, ActorSystem }
+import scala.concurrent.Await
+import scala.concurrent.duration._
 
 /**
  * @author Yaroslav Klymko
@@ -74,9 +76,9 @@ class TutorialInComparisons(implicit system: ActorSystem) {
     channel.close()
   }
 
-  {
+  Await.result({
     system stop channelActor
     system stop connectionActor // will close all channels associated with this connections
-    system.shutdown()
-  }
+    system.terminate()
+  }, 5.seconds)
 }
