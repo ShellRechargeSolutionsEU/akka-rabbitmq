@@ -8,9 +8,11 @@ import ConnectionActor.ProvideChannel
  * @author Yaroslav Klymko
  */
 object ChannelActor {
-  private[rabbitmq] sealed trait State
-  private[rabbitmq] case object Disconnected extends State
-  private[rabbitmq] case object Connected extends State
+  sealed trait State
+  case object Disconnected extends State
+  case object Connected extends State
+
+  case object GetState
 
   private[rabbitmq] sealed trait Data
   private[rabbitmq] case class InMemory(queue: Queue[OnChannel] = Queue()) extends Data
@@ -132,6 +134,11 @@ class ChannelActor(setupChannel: (Channel, ActorRef) => Any)
           dropChannelAndRequestNewChannel(channel)
           goto(Disconnected) using InMemory()
       }
+  }
+  whenUnhandled {
+    case Event(GetState, _) =>
+      sender ! stateName
+      stay
   }
   onTransition {
     case Disconnected -> Connected => log.info("{} connected", self.path)
