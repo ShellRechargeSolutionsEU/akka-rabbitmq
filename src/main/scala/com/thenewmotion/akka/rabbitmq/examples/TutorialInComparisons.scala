@@ -8,7 +8,7 @@ import scala.concurrent.duration._
 /**
  * @author Yaroslav Klymko
  */
-class TutorialInComparisons(implicit system: ActorSystem) {
+class TutorialInComparisons(implicit system: ActorSystem) extends ActorSystemTerminator {
 
   val connection = {
     val factory = new ConnectionFactory()
@@ -79,6 +79,6 @@ class TutorialInComparisons(implicit system: ActorSystem) {
   Await.result({
     system stop channelActor
     system stop connectionActor // will close all channels associated with this connections
-    system.terminate()
+    terminateActorSystem(system)
   }, 5.seconds)
 }

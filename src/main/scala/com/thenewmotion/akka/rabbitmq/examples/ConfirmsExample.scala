@@ -14,7 +14,7 @@ import scala.concurrent.duration._
  * successfully delivered to RabbitMQ. See https://www.rabbitmq.com/confirms.html for more information on publisher
  * confirms.
  */
-object ConfirmsExample extends App {
+object ConfirmsExample extends App with ActorSystemTerminator {
 
   /* --- Some things shared by publisher and consumer --- */
 
@@ -100,7 +100,7 @@ object ConfirmsExample extends App {
   /* --- Letting the app run --- */
 
   Thread.sleep(7000)
-  Await.result(system.terminate(), 1.second)
+  Await.result(terminateActorSystem(system), 1.second)
 
   System.out.println(s"Unconfirmed messages: ${unconfirmed.mkString(", ")}")
 }

@@ -5,6 +5,8 @@ The main idea implemented in library is to survive losing connection with Rabbit
 
 It gives you two actors `ConnectionActor` and `ChannelActor`
 
+The Scala 2.10 version uses Akka 2.3.14, while the Scala 2.11 version uses Akka 2.4.1
+
 ### ConnectionActor
 * handles connection failures and notifies children
 * keep trying to reconnect if connection lost
@@ -27,7 +29,7 @@ using confirms is included as `ConfirmsExample.scala`.
 
 ``` scala
 resolvers += "The New Motion Public Repo" at "http://nexus.thenewmotion.com/content/groups/public/"
-libraryDependencies += "com.thenewmotion.akka" %% "akka-rabbitmq" % "1.2.4"
+libraryDependencies += "com.thenewmotion.akka" %% "akka-rabbitmq" % "2.2"
 ```
 
 ### Maven
@@ -42,8 +44,7 @@ libraryDependencies += "com.thenewmotion.akka" %% "akka-rabbitmq" % "1.2.4"
 <dependency>
     <groupId>com.thenewmotion.akka</groupId>
     <artifactId>akka-rabbitmq_{2.10/2.11}</artifactId>
-    <!-- use version 2.0 for Akka 2.4.x, or 1.2.7 for Akka 2.3.x -->
-    <version>2.0</version>
+    <version>2.2</version>
 </dependency>
 ```
 
