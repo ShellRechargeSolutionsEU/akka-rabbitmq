@@ -1,26 +1,33 @@
-import tnm.ScalaVersion
-
 organization := "com.thenewmotion.akka"
 name := "akka-rabbitmq"
 
 enablePlugins(OssLibPlugin)
 
-crossScalaVersions := Seq(ScalaVersion.curr)
-
 licenses := Seq(("Apache License, Version 2.0", url("http://www.apache.org/licenses/LICENSE-2.0")))
 homepage := Some(new URL("https://github.com/thenewmotion/akka-rabbitmq"))
 
+def akka(scalaVersion: String) = {
+  val version = scalaVersion match {
+    case x if x.startsWith("2.10") => "2.3.14"
+    case x => "2.4.1"
+  }
+
+  def libs(xs: String*) = xs.map(x => "com.typesafe.akka" %% s"akka-$x" % version)
+
+  libs("actor") ++ libs("testkit").map(_ % "test")
+}
+
 libraryDependencies ++= {
-  val akkaVersion = "2.4.0"
-
   Seq(
-    "com.typesafe.akka" %% "akka-actor" % akkaVersion,
     "com.rabbitmq" % "amqp-client" % "3.4.2",
-
-    "com.typesafe.akka" %% "akka-testkit" % akkaVersion % "test",
     "com.typesafe" % "config" % "1.0.2" % "test",
     "org.specs2" %% "specs2-mock" % "2.4.17" % "test"
   )
+}
+libraryDependencies <++= scalaVersion { v: String => akka(v) }
+
+unmanagedSourceDirectories in Compile <+= (sourceDirectory in Compile, scalaBinaryVersion){
+  (s, v) => s / ("scala_"+v)
 }
 
 Format.settings
