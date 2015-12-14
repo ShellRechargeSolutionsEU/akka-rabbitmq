@@ -104,6 +104,13 @@ class ChannelActorSpec extends ActorSpec with Mockito {
       there was one(onChannel).apply(channel)
       state mustEqual disconnected(last)
     }
+    "respond to GetState message" in new TestScope {
+      actorRef ! GetState
+      expectMsg(Disconnected)
+      actorRef.setState(Connected, Connected(channel))
+      actorRef ! GetState
+      expectMsg(Connected)
+    }
   }
 
   private abstract class TestScope extends ActorScope {
