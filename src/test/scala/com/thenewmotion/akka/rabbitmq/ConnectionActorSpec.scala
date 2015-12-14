@@ -139,6 +139,14 @@ class ConnectionActorSpec extends ActorSpec with Mockito with NoTimeConversions 
       actorRef ! ProvideChannel
       expectMsg(channel)
     }
+
+    "respond to GetState message" in new TestScope {
+      actorRef ! GetState
+      expectMsg(Disconnected)
+      actorRef.setState(Connected, Connected(initialConnection))
+      actorRef ! GetState
+      expectMsg(Connected)
+    }
   }
 
   private abstract class TestScope extends ActorScope {

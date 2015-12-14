@@ -7,9 +7,11 @@ import concurrent.duration._
  * @author Yaroslav Klymko
  */
 object ConnectionActor {
-  private[rabbitmq] sealed trait State
-  private[rabbitmq] case object Disconnected extends State
-  private[rabbitmq] case object Connected extends State
+  sealed trait State
+  case object Disconnected extends State
+  case object Connected extends State
+
+  case object GetState
 
   private[rabbitmq] sealed trait Data
   private[rabbitmq] case object NoConnection extends Data
@@ -97,6 +99,12 @@ class ConnectionActor(
         dropConnectionAndInitiateReconnect(connection)
         goto(Disconnected) using NoConnection
       } else stay()
+  }
+
+  whenUnhandled {
+    case Event(GetState, _) =>
+      sender ! stateName
+      stay
   }
 
   onTransition {
