@@ -111,6 +111,10 @@ class ChannelActorSpec extends ActorSpec with Mockito {
       actorRef ! GetState
       expectMsg(Connected)
     }
+    "request channel on postRestart" in new TestScope {
+      actor.postRestart(new RuntimeException(""))
+      expectMsg(ProvideChannel)
+    }
   }
 
   private abstract class TestScope extends ActorScope {

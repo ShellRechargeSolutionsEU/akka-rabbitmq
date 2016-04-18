@@ -177,4 +177,10 @@ class ChannelActor(setupChannel: (Channel, ActorRef) => Any)
 
       case amqpSignal: AmqpShutdownSignal => amqpSignal.appliesTo(channel)
     }
+
+  @scala.throws[Exception](classOf[Exception])
+  override def postRestart(reason: Throwable) {
+    super.postRestart(reason)
+    askForChannel()
+  }
 }
