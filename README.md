@@ -29,7 +29,7 @@ using confirms is included as `ConfirmsExample.scala`.
 
 ``` scala
 resolvers += "The New Motion Public Repo" at "http://nexus.thenewmotion.com/content/groups/public/"
-libraryDependencies += "com.thenewmotion.akka" %% "akka-rabbitmq" % "2.2"
+libraryDependencies += "com.thenewmotion.akka" %% "akka-rabbitmq" % "2.3"
 ```
 
 ### Maven
@@ -44,7 +44,7 @@ libraryDependencies += "com.thenewmotion.akka" %% "akka-rabbitmq" % "2.2"
 <dependency>
     <groupId>com.thenewmotion.akka</groupId>
     <artifactId>akka-rabbitmq_{2.10/2.11}</artifactId>
-    <version>2.2</version>
+    <version>2.3</version>
 </dependency>
 ```
 
