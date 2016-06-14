@@ -23,7 +23,7 @@ object ConnectionActor {
 
   def props(
     factory: ConnectionFactory,
-    reconnectionDelay: FiniteDuration = 3.seconds,
+    reconnectionDelay: FiniteDuration = 10.seconds,
     setupConnection: (Connection, ActorRef) => Any = (_, _) => ()): Props =
     Props(classOf[ConnectionActor], factory, reconnectionDelay, setupConnection)
 }
@@ -124,7 +124,7 @@ class ConnectionActor(
     log.debug("{} closing broken connection {}", self.path, connection)
     closeIfOpen(connection)
 
-    setTimer(reconnectTimer, Connect, reconnectionDelay / 3, repeat = false)
+    setTimer(reconnectTimer, Connect, 1.seconds, repeat = false)
     children.foreach(_ ! ParentShutdownSignal)
   }
 
