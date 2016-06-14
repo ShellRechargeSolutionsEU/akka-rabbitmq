@@ -57,6 +57,8 @@ class ConnectionActorSpec extends ActorSpec with Mockito with NoTimeConversions 
     "reconnect on ShutdownSignalException from server" in new TestScope {
       actorRef.setState(Connected, Connected(initialConnection))
       actor.shutdownCompleted(shutdownSignal())
+      expectMsg(ParentShutdownSignal)
+      expectMsg(10 seconds, channel)
       state mustEqual connectedAfterRecovery
     }
 
@@ -129,8 +131,9 @@ class ConnectionActorSpec extends ActorSpec with Mockito with NoTimeConversions 
 
       // give connection actor the time to close and reconnect
       expectMsg(ParentShutdownSignal)
+      Thread.sleep(3000)
       there was one(initialConnection).close()
-      expectMsg(channel)
+      expectMsg(10 seconds, channel)
 
       // now because of this close, RabbitMQ may tell the actor that the previous connection was shut down by the app
       actor.shutdownCompleted(shutdownSignal(initiatedByApplication = true, reference = initialConnection))
