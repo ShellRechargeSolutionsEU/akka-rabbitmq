@@ -1,6 +1,6 @@
 package com.thenewmotion.akka.rabbitmq
 
-import akka.actor.{ Props, ActorRef, Actor }
+import akka.actor.{ ActorRef, Actor }
 
 /**
  * @author Yaroslav Klymko

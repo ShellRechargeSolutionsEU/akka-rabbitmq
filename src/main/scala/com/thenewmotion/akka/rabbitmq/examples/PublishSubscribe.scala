@@ -1,7 +1,7 @@
 package com.thenewmotion.akka.rabbitmq
 package examples
 
-import akka.actor.{ ActorRef, Props, ActorSystem }
+import akka.actor.{ ActorRef, ActorSystem }
 import concurrent.Future
 import concurrent.ExecutionContext.Implicits.global
 
