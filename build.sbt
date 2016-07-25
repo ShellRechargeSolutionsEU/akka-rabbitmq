@@ -27,9 +27,6 @@ libraryDependencies ++= {
     "org.specs2" %% "specs2-mock" % "2.4.17" % "test"
   )
 }
-unmanagedSourceDirectories in Compile <+= (sourceDirectory in Compile, scalaBinaryVersion){
-  (s, v) => s / ("scala_"+v)
-}
 
 Format.settings
 
