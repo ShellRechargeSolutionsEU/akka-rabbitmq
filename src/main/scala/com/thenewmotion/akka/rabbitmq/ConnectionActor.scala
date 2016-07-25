@@ -58,18 +58,18 @@ class ConnectionActor(
 
     case Event(_: AmqpShutdownSignal, _) => stay()
 
-    case Event(msg @ ProvideChannel, _) =>
-      log.debug("{} can't create channel for {} in disconnected state", header(Disconnected, msg), sender())
+    case Event(ProvideChannel, _) =>
+      log.debug("{} can't create channel for {} in disconnected state", header(Disconnected, ProvideChannel), sender())
       stay()
   }
   when(Connected) {
-    case Event(msg @ ProvideChannel, Connected(connection)) =>
+    case Event(ProvideChannel, Connected(connection)) =>
       safe(connection.createChannel()) match {
         case Some(channel) =>
-          log.debug("{} channel acquired", header(Connected, msg))
+          log.debug("{} channel acquired", header(Connected, ProvideChannel))
           stay replying channel
         case None =>
-          log.debug("{} no channel acquired. ", header(Connected, msg))
+          log.debug("{} no channel acquired. ", header(Connected, ProvideChannel))
           dropConnectionAndInitiateReconnect(connection)
           goto(Disconnected) using NoConnection
       }

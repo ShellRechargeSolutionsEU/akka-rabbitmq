@@ -19,11 +19,6 @@ package object rabbitmq {
 
   type OnChannel = Channel => Any
 
-  case class CreateChannel(props: Props, name: Option[String] = None)
-  case class ChannelCreated(channel: ActorRef)
-
-  case class ChannelMessage(onChannel: OnChannel, dropIfNoChannel: Boolean = true)
-
   implicit class RichConnectionFactory(val self: ConnectionFactory) extends AnyVal {
     def uri: String = "amqp://%s@%s:%d/%s".format(self.getUsername, self.getHost, self.getPort, self.getVirtualHost)
   }

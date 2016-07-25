@@ -38,7 +38,7 @@ trait StashUntilChannel {
     connectionActor ! CreateChannel(ChannelActor.props(setupChannel))
   }
 
-  def receiveChannelCreated(stash: Queue[QueuedMsg]): Receive = {
+  private def receiveChannelCreated(stash: Queue[QueuedMsg]): Receive = {
     case ChannelCreated(channel) =>
       channelActor = Some(channel)
       stash.foreach {
