@@ -10,8 +10,9 @@ javaVersion := "1.7"
 
 def akka(scalaVersion: String) = {
   val version = scalaVersion match {
-    case x if x.startsWith("2.10") => "2.3.14"
-    case x => "2.4.1"
+    case x if x.startsWith("2.11") => "2.4.8"
+    case x if x.startsWith("2.10") => "2.3.15"
+    case other => throw new Exception(s"Unsupported scala version $other")
   }
 
   def libs(xs: String*) = xs.map(x => "com.typesafe.akka" %% s"akka-$x" % version)
