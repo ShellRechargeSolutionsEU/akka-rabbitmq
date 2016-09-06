@@ -5,7 +5,6 @@ import akka.testkit.TestFSMRef
 import akka.actor.{ ActorRef, Props }
 import ConnectionActor._
 import com.rabbitmq.client.ShutdownSignalException
-import org.specs2.time.NoTimeConversions
 import scala.concurrent.duration._
 import scala.collection.immutable.Iterable
 import java.io.IOException
@@ -13,7 +12,7 @@ import java.io.IOException
 /**
  * @author Yaroslav Klymko
  */
-class ConnectionActorSpec extends ActorSpec with Mockito with NoTimeConversions {
+class ConnectionActorSpec extends ActorSpec with Mockito {
 
   "ConnectionActor" should {
 
