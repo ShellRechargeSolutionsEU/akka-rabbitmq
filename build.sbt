@@ -24,8 +24,8 @@ libraryDependencies ++= {
   akka(scalaVersion.value) ++
   Seq(
     "com.rabbitmq" % "amqp-client" % "3.4.2",
-    "com.typesafe" % "config" % "1.0.2" % "test",
-    "org.specs2" %% "specs2-mock" % "2.4.17" % "test"
+    "com.typesafe" % "config" % "1.3.0" % "test",
+    "org.specs2" %% "specs2-mock" % "3.8.4" % "test"
   )
 }
 
