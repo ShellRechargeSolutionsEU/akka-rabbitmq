@@ -18,11 +18,6 @@ object ChannelActor {
   private[rabbitmq] case class InMemory(queue: Queue[OnChannel] = Queue()) extends Data
   private[rabbitmq] case class Connected(channel: Channel) extends Data
 
-  @deprecated("Use com.thenewmotion.akka.rabbitmq.ChannelMessage instead", "0.3")
-  type ChannelMessage = com.thenewmotion.akka.rabbitmq.ChannelMessage
-  @deprecated("Use com.thenewmotion.akka.rabbitmq.ChannelMessage instead", "0.3")
-  val ChannelMessage = com.thenewmotion.akka.rabbitmq.ChannelMessage
-
   def props(setupChannel: (Channel, ActorRef) => Any = (_, _) => ()): Props =
     Props(classOf[ChannelActor], setupChannel)
 
