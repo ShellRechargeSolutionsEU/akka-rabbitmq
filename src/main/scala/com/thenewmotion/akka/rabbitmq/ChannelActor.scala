@@ -79,24 +79,24 @@ class ChannelActor(setupChannel: (Channel, ActorRef) => Any)
   when(Disconnected) {
     case Event(channel: Channel, InMemory(queue)) =>
       setup(channel)
-      def loop(xs: List[OnChannel]): State = xs match {
-        case Nil => goto(Connected) using Connected(channel)
-        case (h :: t) =>
-          val res = safeWithRetry(channel, h)
-          log.debug("{} queued message {} resulted in {}", header(Disconnected, channel), h, res)
+      def loop(qs: Queue[OnChannel]): State = qs.headOption match {
+        case None => goto(Connected) using Connected(channel)
+        case Some(onChannel) =>
+          val res = safeWithRetry(channel, onChannel)
+          log.debug("{} queued message {} resulted in {}", header(Disconnected, channel), onChannel, res)
           res match {
-            case ProcessSuccess(_) => loop(t)
+            case ProcessSuccess(_) => loop(qs.tail)
             case ProcessFailureRetry(retry) =>
               dropChannelAndRequestNewChannel(channel)
-              stay using InMemory(Queue(retry :: t: _*))
+              stay using InMemory(retry +: qs.tail)
             case ProcessFailureDrop =>
               dropChannelAndRequestNewChannel(channel)
-              stay using InMemory(Queue(t: _*))
+              stay using InMemory(qs.tail)
           }
       }
       if (queue.nonEmpty) log.debug("{} processing queued messages {}",
         header(Disconnected, channel), queue.mkString("\n", "\n", ""))
-      loop(queue.toList)
+      loop(queue)
 
     case Event(msg @ ChannelMessage(onChannel, dropIfNoChannel), InMemory(queue)) =>
       if (dropIfNoChannel) {
