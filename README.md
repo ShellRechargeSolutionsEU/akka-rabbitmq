@@ -18,10 +18,10 @@ The Scala 2.10 version uses Akka 2.3.14, while the Scala 2.11 version uses Akka 
 * retrieve new channel if current is broken
 
 Please note that while this library transparently reconnects when a connection fails, it **cannot guarantee** that no
-messages will be lost. If you want to make sure every message is delivered, look into you have to use acknowledgements
+messages will be lost. If you want to make sure every message is delivered, you have to use acknowledgements
 and confirms. This is documented
 [in the RabbitMQ Reliability Guide](https://www.rabbitmq.com/reliability.html#connection-failures). An example program
-using confirms is included as `ConfirmsExample.scala`.
+using confirms can be found in this project under [ConfirmsExample.scala](https://github.com/thenewmotion/akka-rabbitmq/blob/master/src/test/scala/com/thenewmotion/akka/rabbitmq/examples/ConfirmsExample.scala).
 
 ## Setup
 
