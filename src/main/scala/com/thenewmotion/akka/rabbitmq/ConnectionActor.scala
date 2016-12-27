@@ -124,7 +124,7 @@ class ConnectionActor(
     log.debug("{} closing broken connection {}", self.path, connection)
     closeIfOpen(connection)
 
-    self ! Connect
+    setTimer(reconnectTimer, Connect, 1.seconds, repeat = false)
     children.foreach(_ ! ParentShutdownSignal)
   }
 

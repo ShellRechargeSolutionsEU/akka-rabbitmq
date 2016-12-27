@@ -56,6 +56,8 @@ class ConnectionActorSpec extends ActorSpec with Mockito {
     "reconnect on ShutdownSignalException from server" in new TestScope {
       actorRef.setState(Connected, Connected(initialConnection))
       actor.shutdownCompleted(shutdownSignal())
+      expectMsg(ParentShutdownSignal)
+      expectMsg(reconnectionDelay, channel)
       state mustEqual connectedAfterRecovery
     }
 
@@ -128,8 +130,8 @@ class ConnectionActorSpec extends ActorSpec with Mockito {
 
       // give connection actor the time to close and reconnect
       expectMsg(ParentShutdownSignal)
-      there was one(initialConnection).close()
-      expectMsg(channel)
+      eventually(there was one(initialConnection).close())
+      expectMsg(reconnectionDelay, channel)
 
       // now because of this close, RabbitMQ may tell the actor that the previous connection was shut down by the app
       actor.shutdownCompleted(shutdownSignal(initiatedByApplication = true, reference = initialConnection))
@@ -145,6 +147,20 @@ class ConnectionActorSpec extends ActorSpec with Mockito {
       actorRef.setState(Connected, Connected(initialConnection))
       actorRef ! GetState
       expectMsg(Connected)
+    }
+    "create only one channel for each children after connection recovered" in new TestScope {
+      actorRef.setState(Connected, Connected(initialConnection))
+      actor.shutdownCompleted(shutdownSignal())
+
+      expectMsg(ParentShutdownSignal)
+      actorRef ! ProvideChannel // behave like the ChannelActor's `dropChannelAndRequestNewChannel`, called when receive the ShutdownSignal.
+      eventually(there was one(initialConnection).close())
+
+      expectMsg(channel)
+
+      val o = receiveOne(reconnectionDelay)
+      assert(o != channel, s"expect no $channel , found $o")
+
     }
   }
 
