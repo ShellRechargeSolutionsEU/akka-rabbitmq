@@ -4,7 +4,7 @@ name := "akka-rabbitmq"
 enablePlugins(OssLibPlugin)
 
 licenses := Seq(("Apache License, Version 2.0", url("http://www.apache.org/licenses/LICENSE-2.0")))
-homepage := Some(new URL("https://github.com/thenewmotion/akka-rabbitmq"))
+homepage := Some(new URL("https://github.com/NewMotion/akka-rabbitmq"))
 
 def akka(scalaVersion: String) = {
   val version = "2.4.14"

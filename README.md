@@ -24,14 +24,28 @@ using confirms can be found in this project under [ConfirmsExample.scala](https:
 ## Setup
 
 ### Sbt
-
+Since version `3.0.0`
 ``` scala
-resolvers += "The New Motion Public Repo" at "http://nexus.thenewmotion.com/content/groups/public/"
-libraryDependencies += "com.thenewmotion.akka" %% "akka-rabbitmq" % "3.0.0"
+libraryDependencies += "com.thenewmotion" %% "akka-rabbitmq" % "3.0.0"
+```
+
+To add as depency prior releases add resolver to New Motion public repo
+``` scala
+resolvers += "New Motion Public" at "http://nexus.thenewmotion.com/content/groups/public/"
+libraryDependencies += "com.thenewmotion" %% "akka-rabbitmq" % "2.3"
 ```
 
 ### Maven
+Since version `3.0.0`
+```xml
+<dependency>
+    <groupId>com.thenewmotion</groupId>
+    <artifactId>akka-rabbitmq_{2.11/2.12}</artifactId>
+    <version>3.0.0</version>
+</dependency>
+```
 
+For prior releases
 ```xml
 <repository>
     <id>thenewmotion</id>
@@ -42,7 +56,7 @@ libraryDependencies += "com.thenewmotion.akka" %% "akka-rabbitmq" % "3.0.0"
 <dependency>
     <groupId>com.thenewmotion.akka</groupId>
     <artifactId>akka-rabbitmq_{2.11/2.12}</artifactId>
-    <version>3.0.0</version>
+    <version>2.3</version>
 </dependency>
 ```
 
