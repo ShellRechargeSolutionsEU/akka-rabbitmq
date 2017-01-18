@@ -24,8 +24,10 @@ object ConnectionActor {
   def props(
     factory: ConnectionFactory,
     reconnectionDelay: FiniteDuration = 10.seconds,
-    setupConnection: (Connection, ActorRef) => Any = (_, _) => ()): Props =
+    setupConnection: (Connection, ActorRef) => Any = (_, _) => ()): Props = {
+    factory.setAutomaticRecoveryEnabled(false)
     Props(classOf[ConnectionActor], factory, reconnectionDelay, setupConnection)
+  }
 }
 
 class ConnectionActor(
