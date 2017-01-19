@@ -25,7 +25,6 @@ object ConnectionActor {
     factory: ConnectionFactory,
     reconnectionDelay: FiniteDuration = 10.seconds,
     setupConnection: (Connection, ActorRef) => Any = (_, _) => ()): Props = {
-    factory.setAutomaticRecoveryEnabled(false)
     Props(classOf[ConnectionActor], factory, reconnectionDelay, setupConnection)
   }
 }
@@ -130,7 +129,14 @@ class ConnectionActor(
     children.foreach(_ ! ParentShutdownSignal)
   }
 
+  /**
+   * As connection recovery at this level does not play well
+   * with [[http://www.rabbitmq.com/api-guide.html#recovery native recovery]]
+   * factory settings are changed to disable it even if it was enabled
+   * to ensure correctness of operations.
+   */
   def setup = {
+    factory.setAutomaticRecoveryEnabled(false)
     val connection = factory.newConnection()
     log.debug("setting up new connection {}", connection)
     connection.addShutdownListener(this)
