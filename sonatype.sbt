@@ -1,8 +1,8 @@
 pomExtra in Global := {
   <scm>
-    <connection>scm:git:git@github.com:thenewmotion/akka-rabbitmq.git</connection>
-    <developerConnection>scm:git:git@github.com:thenewmotion/akka-rabbitmq.git</developerConnection>
-    <url>git@github.com:thenewmotion/akka-rabbitmq.git</url>
+    <connection>scm:git:git@github.com:NewMotion/akka-rabbitmq.git</connection>
+    <developerConnection>scm:git:git@github.com:NewMotion/akka-rabbitmq.git</developerConnection>
+    <url>git@github.com:NewMotion/akka-rabbitmq.git</url>
   </scm>
   <developers>
     <developer>

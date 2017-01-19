@@ -1,4 +1,4 @@
-# Akka RabbitMQ client [![Build Status](https://secure.travis-ci.org/thenewmotion/akka-rabbitmq.svg)](http://travis-ci.org/thenewmotion/akka-rabbitmq)
+# Akka RabbitMQ client [![Build Status](https://secure.travis-ci.org/NewMotion/akka-rabbitmq.svg)](http://travis-ci.org/NewMotion/akka-rabbitmq)
 
 This small library allows you use [RabbitMQ client](http://www.rabbitmq.com/java-client.html) via [Akka Actors](http://akka.io).
 The main idea implemented in library is to survive losing connection with RabbitMQ server
@@ -31,7 +31,7 @@ libraryDependencies += "com.thenewmotion" %% "akka-rabbitmq" % "3.0.0"
 
 To add as depency prior releases add resolver to New Motion public repo
 ``` scala
-resolvers += "New Motion Public" at "http://nexus.thenewmotion.com/content/groups/public/"
+resolvers += "New Motion Repository" at "http://nexus.thenewmotion.com/content/groups/public/"
 libraryDependencies += "com.thenewmotion" %% "akka-rabbitmq" % "2.3"
 ```
 
@@ -49,12 +49,12 @@ For prior releases
 ```xml
 <repository>
     <id>thenewmotion</id>
-    <name>The New Motion Repository</name>
+    <name>New Motion Repository</name>
     <url>http://nexus.thenewmotion.com/content/groups/public/</url>
 </repository>
 ...
 <dependency>
-    <groupId>com.thenewmotion.akka</groupId>
+    <groupId>com.thenewmotion</groupId>
     <artifactId>akka-rabbitmq_{2.11/2.12}</artifactId>
     <version>2.3</version>
 </dependency>
