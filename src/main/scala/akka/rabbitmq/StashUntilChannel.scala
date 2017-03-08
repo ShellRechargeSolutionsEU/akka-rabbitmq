@@ -1,4 +1,4 @@
-package com.thenewmotion.akka.rabbitmq
+package com.newmotion.akka.rabbitmq
 
 import akka.actor.{ Actor, ActorRef }
 import scala.collection.immutable.Queue

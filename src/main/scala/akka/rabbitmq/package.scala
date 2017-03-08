@@ -1,4 +1,4 @@
-package com.thenewmotion.akka
+package com.newmotion.akka
 
 import akka.actor.{ Props, ActorRef }
 import akka.util.Timeout

@@ -19,14 +19,14 @@ Please note that while this library transparently reconnects when a connection f
 messages will be lost. If you want to make sure every message is delivered, you have to use acknowledgements
 and confirms. This is documented
 [in the RabbitMQ Reliability Guide](https://www.rabbitmq.com/reliability.html#connection-failures). An example program
-using confirms can be found in this project under [ConfirmsExample.scala](https://github.com/thenewmotion/akka-rabbitmq/blob/master/src/test/scala/com/thenewmotion/akka/rabbitmq/examples/ConfirmsExample.scala).
+using confirms can be found in this project under [ConfirmsExample.scala](https://github.com/NewMotion/akka-rabbitmq/blob/master/src/test/scala/akka/rabbitmq/examples/ConfirmsExample.scala).
 
 ## Setup
 
 ### Sbt
 Since version `3.0.0`
 ``` scala
-libraryDependencies += "com.thenewmotion" %% "akka-rabbitmq" % "3.0.0"
+libraryDependencies += "com.newmotion" %% "akka-rabbitmq" % "4.0.0"
 ```
 
 To add as depency prior releases add resolver to New Motion public repo
@@ -36,6 +36,15 @@ libraryDependencies += "com.thenewmotion" %% "akka-rabbitmq" % "2.3"
 ```
 
 ### Maven
+Since version `4.0.0`
+```xml
+<dependency>
+    <groupId>com.newmotion</groupId>
+    <artifactId>akka-rabbitmq_{2.11/2.12}</artifactId>
+    <version>4.0.0</version>
+</dependency>
+```
+
 Since version `3.0.0`
 ```xml
 <dependency>
@@ -64,7 +73,7 @@ For prior releases
 Before start, you need to add import statement
 
 ```scala
-    import com.thenewmotion.akka.rabbitmq._
+    import com.newmotion.akka.rabbitmq._
 ```
 
 ### Create connection

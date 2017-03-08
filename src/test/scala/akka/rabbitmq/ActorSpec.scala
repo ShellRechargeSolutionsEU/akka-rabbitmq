@@ -1,4 +1,4 @@
-package com.thenewmotion.akka.rabbitmq
+package com.newmotion.akka.rabbitmq
 
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope

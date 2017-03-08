@@ -1,4 +1,4 @@
-package com.thenewmotion.akka.rabbitmq
+package com.newmotion.akka.rabbitmq
 package examples
 
 import akka.actor.{ ActorRef, ActorSystem }

@@ -1,4 +1,4 @@
-package com.thenewmotion.akka.rabbitmq
+package com.newmotion.akka.rabbitmq
 
 import akka.actor.{ Props, Actor, ActorRef, Terminated }
 import akka.testkit._

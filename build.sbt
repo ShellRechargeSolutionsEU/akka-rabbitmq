@@ -1,4 +1,4 @@
-organization := "com.thenewmotion"
+organization := "com.newmotion"
 name := "akka-rabbitmq"
 
 enablePlugins(OssLibPlugin)
