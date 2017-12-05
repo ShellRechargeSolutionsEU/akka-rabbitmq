@@ -12,7 +12,7 @@ class StashUntilChannelSpec extends ActorSpec {
 
     "handle ChannelCreated message and switch context" in new TestScope {
       actor ! Command
-      expectNoMsg()
+      expectNoMessage(remainingOrDefault)
       actor ! ChannelCreated(testActor)
       actor ! Command
       expectMsg(Reply(testActor))
