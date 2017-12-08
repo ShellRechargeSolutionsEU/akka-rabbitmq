@@ -7,7 +7,7 @@ licenses := Seq(("Apache License, Version 2.0", url("http://www.apache.org/licen
 homepage := Some(new URL("https://github.com/NewMotion/akka-rabbitmq"))
 
 def akka(scalaVersion: String) = {
-  val version = "2.5.7"
+  val version = "2.5.8"
 
   def libs(xs: String*) = xs.map(x => "com.typesafe.akka" %% s"akka-$x" % version)
 
@@ -17,9 +17,9 @@ def akka(scalaVersion: String) = {
 libraryDependencies ++= {
   akka(scalaVersion.value) ++
   Seq(
-    "com.rabbitmq" % "amqp-client" % "4.1.0",
-    "com.typesafe" % "config" % "1.3.1" % "test",
-    "org.specs2" %% "specs2-mock" % "3.8.6" % "test"
+    "com.rabbitmq" % "amqp-client" % "5.0.0",
+    "com.typesafe" % "config" % "1.3.2" % "test",
+    "org.specs2" %% "specs2-mock" % "4.0.2" % "test"
   )
 }
 

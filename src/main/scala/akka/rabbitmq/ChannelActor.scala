@@ -27,8 +27,8 @@ object ChannelActor {
 }
 
 class ChannelActor(setupChannel: (Channel, ActorRef) => Any)
-    extends RabbitMqActor
-    with FSM[ChannelActor.State, ChannelActor.Data] {
+  extends RabbitMqActor
+  with FSM[ChannelActor.State, ChannelActor.Data] {
 
   import ChannelActor._
 

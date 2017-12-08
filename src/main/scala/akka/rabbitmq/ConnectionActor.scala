@@ -29,11 +29,11 @@ object ConnectionActor {
 }
 
 class ConnectionActor(
-  factory:           ConnectionFactory,
-  reconnectionDelay: FiniteDuration,
-  setupConnection:   (Connection, ActorRef) => Any)
-    extends RabbitMqActor
-    with FSM[ConnectionActor.State, ConnectionActor.Data] {
+    factory:           ConnectionFactory,
+    reconnectionDelay: FiniteDuration,
+    setupConnection:   (Connection, ActorRef) => Any)
+  extends RabbitMqActor
+  with FSM[ConnectionActor.State, ConnectionActor.Data] {
   import ConnectionActor._
 
   val reconnectTimer = "reconnect"

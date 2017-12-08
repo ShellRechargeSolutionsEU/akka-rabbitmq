@@ -4,7 +4,8 @@ import org.specs2.mock.Mockito
 import akka.testkit.TestFSMRef
 import akka.actor.{ ActorRef, Props }
 import ConnectionActor._
-import com.rabbitmq.client.ShutdownSignalException
+import com.rabbitmq.client.{ ShutdownListener, ShutdownSignalException }
+
 import scala.concurrent.duration._
 import scala.collection.immutable.Iterable
 import java.io.IOException
@@ -21,7 +22,7 @@ class ConnectionActorSpec extends ActorSpec with Mockito {
       state mustEqual connectedAfterRecovery
       val order = inOrder(factory, recoveredConnection, setup, actor)
       there was one(factory).newConnection()
-      there was one(recoveredConnection).addShutdownListener(any)
+      there was one(recoveredConnection).addShutdownListener(any[ShutdownListener])
       there was one(setup).apply(recoveredConnection, actorRef)
     }
 
