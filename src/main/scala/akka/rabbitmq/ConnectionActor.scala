@@ -22,16 +22,16 @@ object ConnectionActor {
   case object Connect extends Message
 
   def props(
-    factory: ConnectionFactory,
-    reconnectionDelay: FiniteDuration = 10.seconds,
-    setupConnection: (Connection, ActorRef) => Any = (_, _) => ()): Props =
+    factory:           ConnectionFactory,
+    reconnectionDelay: FiniteDuration                = 10.seconds,
+    setupConnection:   (Connection, ActorRef) => Any = (_, _) => ()): Props =
     Props(classOf[ConnectionActor], factory, reconnectionDelay, setupConnection)
 }
 
 class ConnectionActor(
-  factory: ConnectionFactory,
+  factory:           ConnectionFactory,
   reconnectionDelay: FiniteDuration,
-  setupConnection: (Connection, ActorRef) => Any)
+  setupConnection:   (Connection, ActorRef) => Any)
     extends RabbitMqActor
     with FSM[ConnectionActor.State, ConnectionActor.Data] {
   import ConnectionActor._
@@ -45,7 +45,8 @@ class ConnectionActor(
   when(Disconnected) {
     case Event(Connect, _) =>
       safe(setup).getOrElse {
-        log.error("{} can't connect to {}, retrying in {}",
+        log.error(
+          "{} can't connect to {}, retrying in {}",
           header(Disconnected, Connect), factory.uri, reconnectionDelay)
         setTimer(reconnectTimer, Connect, reconnectionDelay, repeat = false)
         stay()

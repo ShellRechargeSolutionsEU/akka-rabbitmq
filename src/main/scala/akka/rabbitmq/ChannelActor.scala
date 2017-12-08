@@ -89,7 +89,8 @@ class ChannelActor(setupChannel: (Channel, ActorRef) => Any)
               stay using InMemory(qs.tail)
           }
       }
-      if (queue.nonEmpty) log.debug("{} processing queued messages {}",
+      if (queue.nonEmpty) log.debug(
+        "{} processing queued messages {}",
         header(Disconnected, channel), queue.mkString("\n", "\n", ""))
       loop(queue)
 
