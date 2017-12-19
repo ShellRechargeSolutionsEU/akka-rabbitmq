@@ -248,6 +248,7 @@ object PublishSubscribe extends App {
 
  * Update to latest dependencies:
 
+     * Akka: 2.4.14 -> 2.5.8
      * amqp-client: 4.0.0 -> 5.1.1
      * Typesafe Config: 1.3.1 -> 1.3.2
      * Specs2: 3.8.6 -> 4.0.2
