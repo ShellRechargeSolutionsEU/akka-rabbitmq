@@ -242,6 +242,25 @@ object PublishSubscribe extends App {
 }
 ```
 
+## Changelog
+
+### 5.0.0
+
+ * Update to latest dependencies:
+
+     * amqp-client: 4.0.0 -> 5.1.1
+     * Typesafe Config: 1.3.1 -> 1.3.2
+     * Specs2: 3.8.6 -> 4.0.2
+     * SBT: 0.13.13 -> 1.0.3
+     * sbt-build-seed: 2.1.0 -> 4.0.2
+     * sbt-scalariform: 1.3.0 -> 1.8.2
+     * sbt-sonatype: 1.1 -> 2.0
+     * sbt-pgp: 1.0.0 -> 1.1.0
+
+### 4.0.0
+
+ * Change organization from `com.thenewmotion` to `com.newmotion`
+
 ## Other Libraries
 
 Akka-RabbitMQ is a low-level library, and leaves it to the coder to manually wire consumers, serialize messages, etc. If you'd like a higher-level abstraction library, look at [Op-Rabbit](https://github.com/SpinGo/op-rabbit.git) (which uses this library).
