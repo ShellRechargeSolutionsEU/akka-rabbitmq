@@ -26,7 +26,7 @@ using confirms can be found in this project under [ConfirmsExample.scala](https:
 ### Sbt
 Since version `3.0.0`
 ``` scala
-libraryDependencies += "com.newmotion" %% "akka-rabbitmq" % "4.0.0"
+libraryDependencies += "com.newmotion" %% "akka-rabbitmq" % "5.0.0"
 ```
 
 To add as depency prior releases add resolver to New Motion public repo
@@ -36,12 +36,12 @@ libraryDependencies += "com.thenewmotion" %% "akka-rabbitmq" % "2.3"
 ```
 
 ### Maven
-Since version `4.0.0`
+Since version `5.0.0`
 ```xml
 <dependency>
     <groupId>com.newmotion</groupId>
     <artifactId>akka-rabbitmq_{2.11/2.12}</artifactId>
-    <version>4.0.0</version>
+    <version>5.0.0</version>
 </dependency>
 ```
 
@@ -242,6 +242,6 @@ object PublishSubscribe extends App {
 }
 ```
 
-# Other Libraries
+## Other Libraries
 
 Akka-RabbitMQ is a low-level library, and leaves it to the coder to manually wire consumers, serialize messages, etc. If you'd like a higher-level abstraction library, look at [Op-Rabbit](https://github.com/SpinGo/op-rabbit.git) (which uses this library).
