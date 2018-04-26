@@ -32,7 +32,7 @@ libraryDependencies += "com.newmotion" %% "akka-rabbitmq" % "5.0.0"
 To add as depency prior releases add resolver to New Motion public repo
 ``` scala
 resolvers += "New Motion Repository" at "http://nexus.thenewmotion.com/content/groups/public/"
-libraryDependencies += "com.thenewmotion" %% "akka-rabbitmq" % "2.3"
+libraryDependencies += "com.thenewmotion.akka" %% "akka-rabbitmq" % "2.3"
 ```
 
 ### Maven
