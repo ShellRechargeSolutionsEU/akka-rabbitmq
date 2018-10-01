@@ -116,14 +116,14 @@ class ConnectionActor(
   onTermination {
     case StopEvent(_, Connected, Connected(connection)) =>
       log.info("closing connection to {}", factory.uri)
-      closeIfOpen(connection)
+      close(connection)
   }
 
   initialize()
 
   def dropConnectionAndInitiateReconnect(connection: Connection) {
     log.debug("{} closing broken connection {}", self.path, connection)
-    closeIfOpen(connection)
+    close(connection)
 
     self ! Connect
     children.foreach(_ ! ParentShutdownSignal)

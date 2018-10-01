@@ -108,7 +108,7 @@ class ChannelActor(setupChannel: (Channel, ActorRef) => Any)
   when(Connected) {
     case Event(newChannel: Channel, Connected(channel)) =>
       log.debug("{} closing unexpected channel {}", header(Connected, newChannel), channel)
-      closeIfOpen(channel)
+      close(channel)
       stay using Connected(setup(newChannel))
 
     case Event(msg: ShutdownSignal, Connected(channel)) =>
@@ -143,7 +143,7 @@ class ChannelActor(setupChannel: (Channel, ActorRef) => Any)
   onTermination {
     case StopEvent(_, Connected, Connected(channel)) =>
       log.debug("{} closing channel {}", self.path, channel)
-      closeIfOpen(channel)
+      close(channel)
   }
   initialize()
 
@@ -156,7 +156,7 @@ class ChannelActor(setupChannel: (Channel, ActorRef) => Any)
 
   def dropChannelAndRequestNewChannel(broken: Channel) {
     log.debug("{} closing broken channel {}", self.path, broken)
-    closeIfOpen(broken)
+    close(broken)
     askForChannel()
   }
 

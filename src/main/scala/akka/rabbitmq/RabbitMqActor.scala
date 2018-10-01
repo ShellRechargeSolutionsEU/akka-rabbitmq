@@ -1,14 +1,10 @@
 package com.newmotion.akka.rabbitmq
 
-import scala.language.reflectiveCalls
 import akka.actor.Actor
 import akka.event.LoggingAdapter
 import com.rabbitmq.client.{ ShutdownListener, ShutdownSignalException }
 import java.io.IOException
 
-/**
- * @author Yaroslav Klymko
- */
 trait RabbitMqActor extends Actor with ShutdownListener {
 
   def log: LoggingAdapter
@@ -18,13 +14,13 @@ trait RabbitMqActor extends Actor with ShutdownListener {
     self ! AmqpShutdownSignal(cause)
   }
 
-  type ChannelOrConnection = {
-    def isOpen(): Boolean
-    def close(): Unit
-  }
-
-  def closeIfOpen(x: ChannelOrConnection) {
-    if (x.isOpen()) x.close()
+  def close(x: AutoCloseable) {
+    try {
+      x.close()
+    } catch {
+      case e @ (_: ShutdownSignalException | _: IOException) =>
+        log.warning(s"close failure: ${e.getMessage}")
+    }
   }
 
   def safe[T](f: => T): Option[T] = try Some(f) catch {
