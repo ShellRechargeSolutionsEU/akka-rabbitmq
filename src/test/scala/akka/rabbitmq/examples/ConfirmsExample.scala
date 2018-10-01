@@ -86,7 +86,7 @@ object ConfirmsExample extends App {
   val consumerConnActor = system.actorOf(ConnectionActor.props(connFactory), "consumer-connection")
 
   /* Method to be used by the consumer channel actor to set up the channel */
-  def setupConsumer(ch: Channel, self: ActorRef): Unit = {
+  def setupConsumer(ch: Channel, self: ActorRef) = {
     ch.queueDeclare(queueName, true, false, true, null)
     ch.basicConsume(queueName, false /* no autoack */ , new DefaultConsumer(ch) {
       override def handleDelivery(tag: String, env: Envelope, props: BasicProperties, body: Array[Byte]): Unit = {
