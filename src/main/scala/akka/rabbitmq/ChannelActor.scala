@@ -46,20 +46,19 @@ class ChannelActor(setupChannel: (Channel, ActorRef) => Any)
       case Some(r) =>
         ProcessSuccess(r)
 
-      case None if channel.isOpen() =>
-        /* if the function failed, BUT the channel is still open, we know that the problem was with f, and not the
-         channel state.
-
-         Therefore we do *not* retry f in this case because its failure might be due to some inherent problem with f
-         itself, and in that case a whole application might get stuck in a retry loop.
-         */
+      case None if channel.isOpen =>
+        // If the function failed but the channel is still open, we know that the
+        // problem was with f, and not the channel state. Therefore we do *not* retry f
+        // in this case because its failure might be due to some inherent problem with f
+        // itself, and in that case a whole application might get stuck in a retry loop.
         ProcessFailureDrop
 
       case None =>
-        /*
-         The channel is closed, but the actor state believed it was open; There is a small window between a disconnect, sending an AmqpShutdownSignal, and processing that signal
-         Just because our ChannelMessage was processed in this window does not mean we should ignore the intent of dropIfNoChannel (because there was, in fact, no channel)
-         */
+        // The channel closed but the actor state is Connected: There is a small window
+        // between a disconnect, sending an ShutdownSignal, and processing that signal.
+        // Just because our ChannelMessage was processed in this window does not mean we
+        // should ignore the intent of dropChannelAndRequestNewChannel (because there was,
+        // in fact, no channel)
         fn match {
           case Retrying(retries, _) if retries == 0 =>
             ProcessFailureDrop
@@ -105,18 +104,25 @@ class ChannelActor(setupChannel: (Channel, ActorRef) => Any)
 
     case Event(_: ShutdownSignal, _) => stay()
   }
+
   when(Connected) {
     case Event(newChannel: Channel, Connected(channel)) =>
       log.debug("{} closing unexpected channel {}", header(Connected, newChannel), channel)
-      closeIfOpen(channel)
+      close(channel)
       stay using Connected(setup(newChannel))
 
-    case Event(msg: ShutdownSignal, Connected(channel)) =>
-      if (shutdownSignalAppliesToChannel(msg, channel)) {
-        log.debug("{} shutdown", header(Connected, msg))
-        dropChannelAndRequestNewChannel(channel)
+    case Event(shutdownSignal: ShutdownSignal, Connected(channel)) =>
+      (shutdownSignal match {
+        case ParentShutdownSignal =>
+          Some(dropChannel _) // The parent is responsible for providing the new channel.
+        case amqpSignal: AmqpShutdownSignal if amqpSignal.appliesTo(channel) =>
+          Some(dropChannelAndRequestNewChannel _)
+        case _ => None
+      }).fold(stay()) { shutdownAction =>
+        log.debug("{} shutdown", header(Connected, shutdownSignal))
+        shutdownAction(channel)
         goto(Disconnected) using InMemory()
-      } else stay()
+      }
 
     case Event(cm @ ChannelMessage(f, _), Connected(channel)) =>
       val res = safeWithRetry(channel, f)
@@ -131,48 +137,49 @@ class ChannelActor(setupChannel: (Channel, ActorRef) => Any)
           goto(Disconnected) using InMemory()
       }
   }
+
   whenUnhandled {
     case Event(GetState, _) =>
       sender ! stateName
       stay
   }
+
   onTransition {
     case Disconnected -> Connected => log.info("{} connected", self.path)
     case Connected -> Disconnected => log.warning("{} disconnected", self.path)
   }
+
   onTermination {
     case StopEvent(_, Connected, Connected(channel)) =>
       log.debug("{} closing channel {}", self.path, channel)
-      closeIfOpen(channel)
+      close(channel)
   }
+
   initialize()
 
-  def setup(channel: Channel): Channel = {
+  private def setup(channel: Channel): Channel = {
     log.debug("{} setting up new channel {}", self.path, channel)
     channel.addShutdownListener(this)
     setupChannel(channel, self)
     channel
   }
 
-  def dropChannelAndRequestNewChannel(broken: Channel) {
-    log.debug("{} closing broken channel {}", self.path, broken)
-    closeIfOpen(broken)
+  private def dropChannelAndRequestNewChannel(broken: Channel) {
+    dropChannel(broken)
     askForChannel()
   }
 
-  def askForChannel() {
+  private def dropChannel(broken: Channel): Unit = {
+    log.debug("{} closing broken channel {}", self.path, broken)
+    close(broken)
+  }
+
+  private def askForChannel() {
     log.debug("{} asking for new channel", self.path)
     connectionActor ! ProvideChannel
   }
 
-  def connectionActor = context.parent
-
-  def shutdownSignalAppliesToChannel(shutdownSignal: ShutdownSignal, channel: Channel): Boolean =
-    shutdownSignal match {
-      case ParentShutdownSignal           => true
-
-      case amqpSignal: AmqpShutdownSignal => amqpSignal.appliesTo(channel)
-    }
+  private[rabbitmq] def connectionActor = context.parent
 
   @scala.throws[Exception](classOf[Exception])
   override def postRestart(reason: Throwable) {
