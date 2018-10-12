@@ -23,7 +23,7 @@ class PublishSubscribeSpec extends ActorSpec {
       val connection = system.actorOf(ConnectionActor.props(factory), "rabbitmq")
       val exchange = "amq.fanout"
 
-      def setupPublisher(channel: Channel, self: ActorRef) = {
+      def setupPublisher(channel: Channel, self: ActorRef) {
         val queue = channel.queueDeclare().getQueue
         channel.queueBind(queue, exchange, "")
       }
@@ -31,7 +31,7 @@ class PublishSubscribeSpec extends ActorSpec {
       connection ! CreateChannel(ChannelActor.props(setupPublisher), Some("publisher"))
       val ChannelCreated(publisher) = expectMsgType[ChannelCreated]
 
-      def setupSubscriber(channel: Channel, self: ActorRef) = {
+      def setupSubscriber(channel: Channel, self: ActorRef) {
         val queue = channel.queueDeclare().getQueue
         channel.queueBind(queue, exchange, "")
         val consumer = new DefaultConsumer(channel) {

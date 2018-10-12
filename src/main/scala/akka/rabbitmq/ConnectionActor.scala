@@ -63,7 +63,6 @@ class ConnectionActor(
       log.debug("{} can't create channel for {} in disconnected state", header(Disconnected, ProvideChannel), sender())
       stay()
   }
-
   when(Connected) {
     case Event(ProvideChannel, Connected(connection)) =>
       safe(connection.createChannel()) match {
@@ -92,6 +91,10 @@ class ConnectionActor(
 
     case Event(msg @ AmqpShutdownSignal(cause), Connected(connection)) =>
       // It is important that we check if a shutdown signal pertains to the current connection.
+      // This actor explicitly close the connection ourselves before reconnecting. So if this actor starts to reconnect
+      // in a situation where the connection is still open, it closes it and RabbitMQ will send the actor a
+      // ShutdownSignal. This ShutdownSignal may reach this actor when it already has a new connection, in which case
+      // the actor should of course not act upon it.
       if (msg.appliesTo(connection)) {
         log.debug("{} shutdown (initiated by app {})", header(Connected, msg), cause.isInitiatedByApplication)
         dropConnectionAndInitiateReconnect(connection)
@@ -113,14 +116,14 @@ class ConnectionActor(
   onTermination {
     case StopEvent(_, Connected, Connected(connection)) =>
       log.info("closing connection to {}", factory.uri)
-      close(connection)
+      closeIfOpen(connection)
   }
 
   initialize()
 
-  private def dropConnectionAndInitiateReconnect(connection: Connection) {
+  def dropConnectionAndInitiateReconnect(connection: Connection) {
     log.debug("{} closing broken connection {}", self.path, connection)
-    close(connection)
+    closeIfOpen(connection)
 
     self ! Connect
     children.foreach(_ ! ParentShutdownSignal)
@@ -132,7 +135,7 @@ class ConnectionActor(
    * factory settings are changed to disable it even if it was enabled
    * to ensure correctness of operations.
    */
-  private def setup = {
+  def setup = {
     factory.setAutomaticRecoveryEnabled(false)
     val connection = factory.newConnection()
     log.debug("setting up new connection {}", connection)
@@ -143,9 +146,9 @@ class ConnectionActor(
     goto(Connected) using Connected(connection)
   }
 
-  private[rabbitmq] def children = context.children
+  def children = context.children
 
-  private[rabbitmq] def newChild(props: Props, name: Option[String]) = name match {
+  def newChild(props: Props, name: Option[String]) = name match {
     case Some(x) => context.actorOf(props, x)
     case None    => context.actorOf(props)
   }

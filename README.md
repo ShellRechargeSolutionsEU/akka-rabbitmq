@@ -26,22 +26,22 @@ using confirms can be found in this project under [ConfirmsExample.scala](https:
 ### Sbt
 Since version `3.0.0`
 ``` scala
-libraryDependencies += "com.newmotion" %% "akka-rabbitmq" % "5.0.1"
+libraryDependencies += "com.newmotion" %% "akka-rabbitmq" % "5.0.0"
 ```
 
-To add earlier releases as a dependency, you have to add the NewMotion public repository to your resolver list:
+To add as depency prior releases add resolver to New Motion public repo
 ``` scala
 resolvers += "New Motion Repository" at "http://nexus.thenewmotion.com/content/groups/public/"
 libraryDependencies += "com.thenewmotion.akka" %% "akka-rabbitmq" % "2.3"
 ```
 
 ### Maven
-Since version `5.0.1`
+Since version `5.0.0`
 ```xml
 <dependency>
     <groupId>com.newmotion</groupId>
     <artifactId>akka-rabbitmq_{2.11/2.12}</artifactId>
-    <version>5.0.1</version>
+    <version>5.0.0</version>
 </dependency>
 ```
 
@@ -243,19 +243,6 @@ object PublishSubscribe extends App {
 ```
 
 ## Changelog
-### 5.0.1
-
- * Fix issue where ChannelActor asks for a new channel when it should not
-
- * Update to latest dependencies:
-
-     * Akka: 2.5.8 -> 2.5.13
-     * amqp-client: 5.1.1 -> 5.4.2
-     * Typesafe Config: 1.3.2 -> 1.3.3
-     * Specs2: 4.0.2 -> 4.3.4
-     * SBT: 1.0.3 -> 1.2.3
-     * sbt-build-seed: 4.0.2 -> 4.1.2
-     * sbt-sonatype: 2.0 -> 2.3
 
 ### 5.0.0
 

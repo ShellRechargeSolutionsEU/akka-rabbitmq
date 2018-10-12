@@ -54,10 +54,10 @@ class TutorialInComparisons(implicit system: ActorSystem) {
 
   {
     // this function will be called each time new channel received
-    def setupChannel(channel: Channel, self: ActorRef) = {
+    def setupChannel(channel: Channel, self: ActorRef) {
       channel.queueDeclare("queue_name", false, false, false, null)
     }
-    val _: ActorRef = connectionActor.createChannel(ChannelActor.props(setupChannel))
+    val channelActor: ActorRef = connectionActor.createChannel(ChannelActor.props(setupChannel))
   }
 
   {

@@ -77,7 +77,7 @@ class ChannelActorSpec extends ActorSpec with Mockito {
       actorRef.setState(Connected, Connected(channel))
       actorRef ! ParentShutdownSignal
       state mustEqual disconnected()
-      expectNoMessage
+      expectMsg(ProvideChannel)
     }
     "leave channel on ShutdownSignal" in new TestScope {
       actorRef.setState(Connected, Connected(channel))
