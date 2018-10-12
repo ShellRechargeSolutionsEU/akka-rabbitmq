@@ -6,6 +6,11 @@ pomExtra in Global := {
   </scm>
   <developers>
     <developer>
+      <id>sbmpost</id>
+      <name>Stefan Post</name>
+      <url>https://github.com/sbmpost</url>
+    </developer>
+    <developer>
       <id>gertjana</id>
       <name>Gertjan Assies</name>
       <url>https://github.com/gertjana</url>

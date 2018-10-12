@@ -244,6 +244,10 @@ object PublishSubscribe extends App {
 
 ## Changelog
 
+### 5.0.2
+
+ * Supersedes version 5.0.1 which has been withdrawn to investigate some unforeseen issues
+
 ### 5.0.0
 
  * Update to latest dependencies:
