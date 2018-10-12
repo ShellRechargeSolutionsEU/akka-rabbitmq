@@ -44,12 +44,15 @@ class ConnectionActor(
 
   when(Disconnected) {
     case Event(Connect, _) =>
-      safe(setup).getOrElse {
-        log.error(
-          "{} can't connect to {}, retrying in {}",
-          header(Disconnected, Connect), factory.uri, reconnectionDelay)
-        setTimer(reconnectTimer, Connect, reconnectionDelay, repeat = false)
-        stay()
+      setup() match {
+        case None =>
+          log.error(
+            "{} can't connect to {}, retrying in {}",
+            header(Disconnected, Connect), factory.uri, reconnectionDelay)
+          setTimer(reconnectTimer, Connect, reconnectionDelay, repeat = false)
+          stay()
+        case Some(connection) =>
+          goto(Connected) using Connected(connection)
       }
 
     case Event(msg @ CreateChannel(props, name), _) =>
@@ -66,18 +69,19 @@ class ConnectionActor(
 
   when(Connected) {
     case Event(ProvideChannel, Connected(connection)) =>
-      safe(connection.createChannel()) match {
+      safeCreateChannel(connection) match {
         case Some(channel) =>
           log.debug("{} channel acquired", header(Connected, ProvideChannel))
           stay replying channel
         case None =>
           log.debug("{} no channel acquired. ", header(Connected, ProvideChannel))
-          dropConnectionAndInitiateReconnect(connection)
+          dropConnectionAndNotifyChildren(connection)
+          self ! Connect
           goto(Disconnected) using NoConnection
       }
 
     case Event(msg @ CreateChannel(props, name), Connected(connection)) =>
-      safe(connection.createChannel()) match {
+      safeCreateChannel(connection) match {
         case Some(channel) =>
           val child = newChild(props, name)
           log.debug("{} creating child {} with channel {}", header(Connected, msg), child, channel)
@@ -85,7 +89,8 @@ class ConnectionActor(
           stay replying ChannelCreated(child)
         case None =>
           val child = newChild(props, name)
-          dropConnectionAndInitiateReconnect(connection)
+          dropConnectionAndNotifyChildren(connection)
+          self ! Connect
           log.debug("{} creating child {} without channel", header(Connected, msg), child)
           goto(Disconnected) using NoConnection replying ChannelCreated(child)
       }
@@ -94,7 +99,8 @@ class ConnectionActor(
       // It is important that we check if a shutdown signal pertains to the current connection.
       if (msg.appliesTo(connection)) {
         log.debug("{} shutdown (initiated by app {})", header(Connected, msg), cause.isInitiatedByApplication)
-        dropConnectionAndInitiateReconnect(connection)
+        dropConnectionAndNotifyChildren(connection)
+        self ! Connect
         goto(Disconnected) using NoConnection
       } else stay()
   }
@@ -118,11 +124,10 @@ class ConnectionActor(
 
   initialize()
 
-  private def dropConnectionAndInitiateReconnect(connection: Connection) {
-    log.debug("{} closing broken connection {}", self.path, connection)
-    close(connection)
+  private def dropConnectionAndNotifyChildren(brokenConnection: Connection) {
+    log.debug("{} closing broken connection {}", self.path, brokenConnection)
+    close(brokenConnection)
 
-    self ! Connect
     children.foreach(_ ! ParentShutdownSignal)
   }
 
@@ -132,15 +137,37 @@ class ConnectionActor(
    * factory settings are changed to disable it even if it was enabled
    * to ensure correctness of operations.
    */
-  private def setup = {
+  private def setup(): Option[Connection] = {
     factory.setAutomaticRecoveryEnabled(false)
-    val connection = factory.newConnection()
-    log.debug("setting up new connection {}", connection)
-    connection.addShutdownListener(this)
-    cancelTimer(reconnectTimer)
-    setupConnection(connection, self)
-    children.foreach(_ ! connection.createChannel())
-    goto(Connected) using Connected(connection)
+    safe(factory.newConnection()).flatMap { connection =>
+      log.debug("setting up new connection {}", connection)
+      connection.addShutdownListener(this)
+      cancelTimer(reconnectTimer)
+      safe(setupConnection(connection, self)).flatMap { _ =>
+        children.foldLeft[Option[Connection]](Some(connection)) {
+          case (Some(conn), child) =>
+            safeCreateChannel(conn) match {
+              case Some(channel) =>
+                child ! channel
+                Some(conn)
+              case None =>
+                dropConnectionAndNotifyChildren(conn)
+                None
+            }
+          case (None, _) =>
+            None
+        }
+      }
+    }
+  }
+
+  private def safeCreateChannel(connection: Connection): Option[Channel] = {
+    safe(connection.createChannel()).map { channel =>
+      if (channel == null) {
+        log.warning("{} no channels available on connection {}", self.path, connection)
+      }
+      channel
+    }
   }
 
   private[rabbitmq] def children = context.children

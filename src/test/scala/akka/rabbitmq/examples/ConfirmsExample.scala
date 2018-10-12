@@ -36,7 +36,7 @@ object ConfirmsExample extends App {
   val pubConnActor = system.actorOf(ConnectionActor.props(connFactory), "publisher-connection")
 
   /* Method to be used by the publishing ChannelActor to set up the channel */
-  def setupConfirmingPublisher(ch: Channel, self: ActorRef) {
+  def setupConfirmingPublisher(ch: Channel, self: ActorRef) = {
     ch.queueDeclare(queueName, true, false, true, null)
     ch.confirmSelect()
     ch.addConfirmListener(confirmListener)

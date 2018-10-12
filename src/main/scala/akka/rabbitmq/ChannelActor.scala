@@ -84,6 +84,7 @@ class ChannelActor(setupChannel: (Channel, ActorRef) => Any)
               dropChannelAndRequestNewChannel(channel)
               stay using InMemory(retry +: qs.tail)
             case ProcessFailureDrop =>
+              log.warning("{} stopped retrying message {}", header(Disconnected, channel), onChannel)
               dropChannelAndRequestNewChannel(channel)
               stay using InMemory(qs.tail)
           }
@@ -124,15 +125,18 @@ class ChannelActor(setupChannel: (Channel, ActorRef) => Any)
         goto(Disconnected) using InMemory()
       }
 
-    case Event(cm @ ChannelMessage(f, _), Connected(channel)) =>
-      val res = safeWithRetry(channel, f)
-      log.debug("{} received channel message resulted in {}", header(Connected, cm), res)
+    case Event(msg @ ChannelMessage(onChannel, _), Connected(channel)) =>
+      val res = safeWithRetry(channel, onChannel)
+      log.debug("{} received channel message resulted in {}", header(Connected, msg), res)
       res match {
         case ProcessSuccess(_) => stay()
-        case ProcessFailureRetry(retry) if !cm.dropIfNoChannel =>
+        case ProcessFailureRetry(retry) if !msg.dropIfNoChannel =>
           dropChannelAndRequestNewChannel(channel)
           goto(Disconnected) using InMemory(Queue(retry))
         case _ =>
+          if (!msg.dropIfNoChannel) {
+            log.warning("{} not retrying message {}", header(Connected, msg), onChannel)
+          }
           dropChannelAndRequestNewChannel(channel)
           goto(Disconnected) using InMemory()
       }
@@ -169,9 +173,9 @@ class ChannelActor(setupChannel: (Channel, ActorRef) => Any)
     askForChannel()
   }
 
-  private def dropChannel(broken: Channel): Unit = {
-    log.debug("{} closing broken channel {}", self.path, broken)
-    close(broken)
+  private def dropChannel(brokenChannel: Channel): Unit = {
+    log.debug("{} closing broken channel {}", self.path, brokenChannel)
+    close(brokenChannel)
   }
 
   private def askForChannel() {
