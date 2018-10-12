@@ -20,7 +20,7 @@ class ConnectionActorSpec extends ActorSpec with Mockito {
     "try to connect on startup" in new TestScope {
       actorRef ! Connect
       state mustEqual connectedAfterRecovery
-      val order = inOrder(factory, recoveredConnection, setup, actor)
+      val order = inOrder(factory, recoveredConnection, setup)
       there was one(factory).newConnection()
       there was one(recoveredConnection).addShutdownListener(any[ShutdownListener])
       there was one(setup).apply(recoveredConnection, actorRef)
@@ -147,9 +147,41 @@ class ConnectionActorSpec extends ActorSpec with Mockito {
       actorRef ! GetState
       expectMsg(Connected)
     }
+
+    "create only one channel when reconnecting" in new TestScopeBase {
+      val setupChannel = mock[(Channel, ActorRef) => Unit]
+      val createChannel = CreateChannel(ChannelActor.props(setupChannel))
+
+      class TestConnectionActor extends ConnectionActor(factory, reconnectionDelay, setup) {
+        override def preStart() {}
+      }
+
+      val connectionActorRef = TestFSMRef(new TestConnectionActor)
+
+      connectionActorRef.setState(Connected, Connected(initialConnection))
+      connectionActorRef ! createChannel
+      expectMsgType[ChannelCreated]
+      there was one(initialConnection).createChannel
+
+      connectionActorRef ! AmqpShutdownSignal(shutdownSignal())
+      eventually(1, 100.millis)(there was one(recoveredConnection).createChannel)
+    }
   }
 
-  private abstract class TestScope extends ActorScope {
+  private abstract class TestScope extends TestScopeBase {
+    class TestConnectionActor extends ConnectionActor(factory, reconnectionDelay, setup) {
+      override def children = Iterable(testActor)
+      override def newChild(props: Props, name: Option[String]) = testActor
+      override def preStart() {}
+    }
+
+    val actorRef = TestFSMRef(new TestConnectionActor)
+
+    def actor = actorRef.underlyingActor.asInstanceOf[ConnectionActor]
+    def state: (State, Data) = actorRef.stateName -> actorRef.stateData
+  }
+
+  private abstract class TestScopeBase extends ActorScope {
     val channel = mock[Channel]
 
     def createMockConnection() = {
@@ -170,10 +202,7 @@ class ConnectionActorSpec extends ActorSpec with Mockito {
     val create = CreateChannel(null)
     val reconnectionDelay = FiniteDuration(10, SECONDS)
     val setup = mock[(Connection, ActorRef) => Any]
-    val actorRef = TestFSMRef(new TestConnectionActor)
 
-    def actor = actorRef.underlyingActor.asInstanceOf[ConnectionActor]
-    def state: (State, Data) = actorRef.stateName -> actorRef.stateData
     def disconnected = Disconnected -> NoConnection
     def connectedInitially = Connected -> Connected(initialConnection)
     def connectedAfterRecovery = Connected -> Connected(recoveredConnection)
@@ -183,12 +212,6 @@ class ConnectionActorSpec extends ActorSpec with Mockito {
       shutdownSignal.isInitiatedByApplication returns initiatedByApplication
       shutdownSignal.getReference returns reference
       shutdownSignal
-    }
-
-    class TestConnectionActor extends ConnectionActor(factory, reconnectionDelay, setup) {
-      override def children = Iterable(testActor)
-      override def newChild(props: Props, name: Option[String]) = testActor
-      override def preStart() {}
     }
   }
 }
