@@ -3,6 +3,7 @@ package com.newmotion.akka.rabbitmq
 import akka.actor.{ Props, ActorRef, FSM }
 import collection.immutable.Queue
 import ConnectionActor.ProvideChannel
+import scala.annotation.tailrec
 
 /**
  * @author Yaroslav Klymko
@@ -73,6 +74,8 @@ class ChannelActor(setupChannel: (Channel, ActorRef) => Any)
   when(Disconnected) {
     case Event(channel: Channel, InMemory(queue)) =>
       setup(channel)
+
+      @tailrec
       def loop(qs: Queue[OnChannel]): State = qs.headOption match {
         case None => goto(Connected) using Connected(channel)
         case Some(onChannel) =>
@@ -89,9 +92,10 @@ class ChannelActor(setupChannel: (Channel, ActorRef) => Any)
               stay using InMemory(qs.tail)
           }
       }
+
       if (queue.nonEmpty) log.debug(
-        "{} processing queued messages {}",
-        header(Disconnected, channel), queue.mkString("\n", "\n", ""))
+        "{} processing {} queued messages {}",
+        header(Disconnected, channel), queue.size, queue.mkString("\n", "\n", ""))
       loop(queue)
 
     case Event(msg @ ChannelMessage(onChannel, dropIfNoChannel), InMemory(queue)) =>
@@ -162,9 +166,16 @@ class ChannelActor(setupChannel: (Channel, ActorRef) => Any)
   initialize()
 
   private def setup(channel: Channel): Channel = {
-    log.debug("{} setting up new channel {}", self.path, channel)
     channel.addShutdownListener(this)
-    setupChannel(channel, self)
+    log.debug("{} setting up new channel {}", self.path, channel)
+    try {
+      setupChannel(channel, self)
+    } catch {
+      case throwable: Throwable =>
+        log.debug("{} setup channel callback error {}", self.path, channel)
+        close(channel)
+        throw throwable
+    }
     channel
   }
 
@@ -187,6 +198,7 @@ class ChannelActor(setupChannel: (Channel, ActorRef) => Any)
 
   @scala.throws[Exception](classOf[Exception])
   override def postRestart(reason: Throwable) {
+    log.debug(s"{} child restarted with reason {}", self.path, reason.getMessage)
     super.postRestart(reason)
     askForChannel()
   }

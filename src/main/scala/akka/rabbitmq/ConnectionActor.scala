@@ -1,7 +1,10 @@
 package com.newmotion.akka.rabbitmq
 
-import akka.actor.{ ActorRef, Props, FSM }
+import akka.actor.{ ActorRef, DeadLetter, Props, FSM }
 import concurrent.duration._
+import scala.concurrent.Future
+import scala.concurrent.blocking
+import scala.util.Success
 
 /**
  * @author Yaroslav Klymko
@@ -20,6 +23,9 @@ object ConnectionActor {
   sealed trait Message
   case object ProvideChannel extends Message
   case object Connect extends Message
+  case class Reconnect(oldConnection: Connection) extends Message
+  case class NewConnection(connection: Connection) extends Message
+  case class SetupChildren(refs: Iterable[ActorRef]) extends Message
 
   def props(
     factory:           ConnectionFactory,
@@ -36,6 +42,10 @@ class ConnectionActor(
   with FSM[ConnectionActor.State, ConnectionActor.Data] {
   import ConnectionActor._
 
+  implicit val executionContext = context.dispatcher
+
+  context.system.eventStream.subscribe(self, classOf[DeadLetter])
+
   val reconnectTimer = "reconnect"
 
   startWith(Disconnected, NoConnection)
@@ -44,16 +54,21 @@ class ConnectionActor(
 
   when(Disconnected) {
     case Event(Connect, _) =>
-      setup() match {
-        case None =>
+      setup().onComplete {
+        case Success(Some(connection)) =>
+          self ! NewConnection(connection)
+        case _ =>
           log.error(
             "{} can't connect to {}, retrying in {}",
             header(Disconnected, Connect), factory.uri, reconnectionDelay)
           setTimer(reconnectTimer, Connect, reconnectionDelay, repeat = false)
-          stay()
-        case Some(connection) =>
-          goto(Connected) using Connected(connection)
       }
+      stay()
+
+    case Event(msg @ NewConnection(connection), _) =>
+      log.debug("{} setup {} children", header(Disconnected, msg), children.size)
+      self ! SetupChildren(children)
+      goto(Connected) using Connected(connection)
 
     case Event(msg @ CreateChannel(props, name), _) =>
       val child = newChild(props, name)
@@ -68,47 +83,57 @@ class ConnectionActor(
   }
 
   when(Connected) {
-    case Event(ProvideChannel, Connected(connection)) =>
-      safeCreateChannel(connection) match {
-        case Some(channel) =>
-          log.debug("{} channel acquired", header(Connected, ProvideChannel))
-          stay replying channel
-        case None =>
-          log.debug("{} no channel acquired. ", header(Connected, ProvideChannel))
-          dropConnectionAndNotifyChildren(connection)
-          self ! Connect
-          goto(Disconnected) using NoConnection
+    case Event(SetupChildren(refs), Connected(connection)) =>
+      setupChildren(connection, refs).onComplete {
+        case Success(true) =>
+          log.debug("{} setup children success", self.path)
+        case _ =>
+          log.error("{} setup children failed", self.path)
+          self ! Reconnect(connection)
+      }
+      stay()
+
+    case Event(msg @ Reconnect(oldConnection), Connected(connection)) =>
+      if (oldConnection.getId == connection.getId) {
+        dropConnectionAndNotifyChildren(connection)
+        log.info("{} reconnecting to {} in {}", header(Connected, msg), factory.uri, reconnectionDelay)
+        setTimer(reconnectTimer, Connect, reconnectionDelay, repeat = false)
+        goto(Disconnected) using NoConnection
+      } else {
+        log.debug("{} already reconnected to {}", header(Connected, msg), factory.uri)
+        stay()
       }
 
+    case Event(ProvideChannel, Connected(connection)) =>
+      provideChannel(connection, sender(), ProvideChannel)
+      stay()
+
     case Event(msg @ CreateChannel(props, name), Connected(connection)) =>
-      safeCreateChannel(connection) match {
-        case Some(channel) =>
-          val child = newChild(props, name)
-          log.debug("{} creating child {} with channel {}", header(Connected, msg), child, channel)
-          child ! channel
-          stay replying ChannelCreated(child)
-        case None =>
-          val child = newChild(props, name)
-          dropConnectionAndNotifyChildren(connection)
-          self ! Connect
-          log.debug("{} creating child {} without channel", header(Connected, msg), child)
-          goto(Disconnected) using NoConnection replying ChannelCreated(child)
-      }
+      val child = newChild(props, name)
+      provideChannel(connection, child, msg)
+      stay replying ChannelCreated(child)
 
     case Event(msg @ AmqpShutdownSignal(cause), Connected(connection)) =>
       // It is important that we check if a shutdown signal pertains to the current connection.
       if (msg.appliesTo(connection)) {
         log.debug("{} shutdown (initiated by app {})", header(Connected, msg), cause.isInitiatedByApplication)
-        dropConnectionAndNotifyChildren(connection)
-        self ! Connect
-        goto(Disconnected) using NoConnection
-      } else stay()
+        self ! Reconnect(connection)
+      }
+      stay()
   }
 
   whenUnhandled {
     case Event(GetState, _) =>
       sender ! stateName
-      stay
+      stay()
+
+    case Event(msg @ DeadLetter(channel: Channel, `self`, child), _) =>
+      log.debug("{} closing channel {} of child {}", header(stateName, msg), channel, child)
+      close(channel)
+      stay()
+
+    case Event(_: DeadLetter, _) =>
+      stay()
   }
 
   onTransition {
@@ -128,6 +153,7 @@ class ConnectionActor(
     log.debug("{} closing broken connection {}", self.path, brokenConnection)
     close(brokenConnection)
 
+    log.debug("{} sending shutdown signal to {} children", self.path, children.size)
     children.foreach(_ ! ParentShutdownSignal)
   }
 
@@ -137,38 +163,60 @@ class ConnectionActor(
    * factory settings are changed to disable it even if it was enabled
    * to ensure correctness of operations.
    */
-  private def setup(): Option[Connection] = {
-    factory.setAutomaticRecoveryEnabled(false)
-    safe(factory.newConnection()).flatMap { connection =>
-      log.debug("setting up new connection {}", connection)
-      connection.addShutdownListener(this)
-      cancelTimer(reconnectTimer)
-      safe(setupConnection(connection, self)).flatMap { _ =>
-        children.foldLeft[Option[Connection]](Some(connection)) {
-          case (Some(conn), child) =>
-            safeCreateChannel(conn) match {
-              case Some(channel) =>
-                child ! channel
-                Some(conn)
-              case None =>
-                dropConnectionAndNotifyChildren(conn)
-                None
-            }
-          case (None, _) =>
-            None
+  private def setup(): Future[Option[Connection]] =
+    Future {
+      blocking {
+        factory.setAutomaticRecoveryEnabled(false)
+        safe(factory.newConnection()).map { connection =>
+          cancelTimer(reconnectTimer)
+          connection.addShutdownListener(this)
+          log.debug("{} setting up new connection {}", self.path, connection)
+          try {
+            setupConnection(connection, self)
+          } catch {
+            case throwable: Throwable =>
+              log.debug("{} setup connection callback error {}", self.path, connection)
+              close(connection)
+              throw throwable
+          }
+
+          connection
         }
       }
     }
-  }
 
-  private def safeCreateChannel(connection: Connection): Option[Channel] = {
+  private def setupChildren(connection: Connection, refs: Iterable[ActorRef]): Future[Boolean] =
+    Future {
+      blocking {
+        refs.foldLeft(true) {
+          case (success, child) =>
+            success && (safeCreateChannel(connection) match {
+              case None => false
+              case Some(channel) =>
+                child ! channel
+                true
+            })
+        }
+      }
+    }
+
+  private def provideChannel(connection: Connection, sender: ActorRef, msg: Any): Unit =
+    Future(blocking(safeCreateChannel(connection))).onComplete {
+      case Success(Some(channel)) =>
+        log.debug("{} channel acquired", header(Connected, msg))
+        sender ! channel
+      case _ =>
+        log.debug("{} no channel acquired. ", header(Connected, msg))
+        self ! Reconnect(connection)
+    }
+
+  private def safeCreateChannel(connection: Connection): Option[Channel] =
     safe(connection.createChannel()).map { channel =>
       if (channel == null) {
         log.warning("{} no channels available on connection {}", self.path, connection)
       }
       channel
     }
-  }
 
   private[rabbitmq] def children = context.children
 

@@ -57,7 +57,7 @@ class ConnectionActorSpec extends ActorSpec with Mockito {
     "reconnect on ShutdownSignalException from server" in new TestScope {
       actorRef.setState(Connected, Connected(initialConnection))
       actor.shutdownCompleted(shutdownSignal())
-      state mustEqual connectedAfterRecovery
+      eventually(state mustEqual connectedAfterRecovery)
     }
 
     "keep trying to reconnect on ShutdownSignalException from server" in new TestScope {
@@ -85,8 +85,8 @@ class ConnectionActorSpec extends ActorSpec with Mockito {
       recoveredConnection.createChannel() throws new IOException
       actorRef.setState(Connected, Connected(initialConnection))
       actorRef ! create
-      expectMsg(ParentShutdownSignal)
       expectMsg(ChannelCreated(testActor))
+      expectMsg(ParentShutdownSignal)
       state mustEqual disconnected
     }
 
@@ -164,7 +164,7 @@ class ConnectionActorSpec extends ActorSpec with Mockito {
       there was one(initialConnection).createChannel
 
       connectionActorRef ! AmqpShutdownSignal(shutdownSignal())
-      eventually(1, 100.millis)(there was one(recoveredConnection).createChannel)
+      eventually(there was one(recoveredConnection).createChannel)
     }
   }
 
@@ -200,7 +200,7 @@ class ConnectionActorSpec extends ActorSpec with Mockito {
       factory
     }
     val create = CreateChannel(null)
-    val reconnectionDelay = FiniteDuration(10, SECONDS)
+    val reconnectionDelay = FiniteDuration(1, SECONDS)
     val setup = mock[(Connection, ActorRef) => Any]
 
     def disconnected = Disconnected -> NoConnection

@@ -3,6 +3,8 @@ package com.newmotion.akka.rabbitmq
 import java.util.concurrent.TimeUnit
 
 import akka.actor.ActorRef
+import ChannelActor.Connected
+import ChannelActor.GetState
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -44,6 +46,11 @@ class PublishSubscribeSpec extends ActorSpec {
 
       connection ! CreateChannel(ChannelActor.props(setupSubscriber), Some("subscriber"))
       val ChannelCreated(subscriber) = expectMsgType[ChannelCreated]
+
+      awaitAssert {
+        subscriber ! GetState
+        expectMsg(Connected)
+      }
 
       val msgs = 0L to 33L
       msgs.foreach(x =>
