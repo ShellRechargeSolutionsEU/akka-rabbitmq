@@ -250,6 +250,7 @@ object PublishSubscribe extends App {
  * Fix: take into account deadletters to channel actors
  * Fix: take into account blocking nature of new connections and channels
  * Fix: channel actor shouldn't ask for new channel if connection shutdown
+ * Change default behaviour of ChannelMessage to not drop msgs if no channel
  * Log warning when a message isn't retried any longer
  * Added more debug logging
 
