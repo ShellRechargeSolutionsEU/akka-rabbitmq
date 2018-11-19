@@ -31,13 +31,13 @@ class ChannelActorSpec extends ActorSpec with Mockito {
     }
     "process message if has channel" in new TestScope {
       actorRef.setState(Connected, Connected(channel))
-      actorRef ! ChannelMessage(onChannel)
+      actorRef ! ChannelMessage(onChannel, dropIfNoChannel = true)
       there was one(onChannel).apply(channel)
       state mustEqual connected()
     }
     "process message if has channel, and when fails but channel is still open, drops the message and reconnects" in new TestScope {
       actorRef.setState(Connected, Connected(channel))
-      actorRef ! ChannelMessage(onChannelFailure, dropIfNoChannel = false)
+      actorRef ! ChannelMessage(onChannelFailure, dropIfNoChannel = true)
       state mustEqual disconnected()
       expectMsg(ProvideChannel)
     }
@@ -70,7 +70,7 @@ class ChannelActorSpec extends ActorSpec with Mockito {
       state mustEqual disconnected(onChannel)
     }
     "drop channel message if no channel and allowed to drop" in new TestScope {
-      actorRef ! ChannelMessage(onChannel)
+      actorRef ! ChannelMessage(onChannel, dropIfNoChannel = true)
       state mustEqual disconnected()
     }
     "leave channel if told by parent" in new TestScope {
