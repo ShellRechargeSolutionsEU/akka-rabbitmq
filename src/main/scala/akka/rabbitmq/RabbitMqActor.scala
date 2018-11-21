@@ -1,12 +1,11 @@
 package com.newmotion.akka.rabbitmq
 
+import scala.util.control.NonFatal
 import akka.actor.Actor
 import akka.event.LoggingAdapter
 import com.rabbitmq.client.{ ShutdownListener, ShutdownSignalException }
 import java.io.IOException
 import java.util.concurrent.TimeoutException
-
-import scala.util.control.NonFatal
 
 /**
  * @author Yaroslav Klymko

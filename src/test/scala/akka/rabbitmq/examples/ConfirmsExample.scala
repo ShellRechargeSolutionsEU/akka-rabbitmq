@@ -52,7 +52,7 @@ object ConfirmsExample extends App {
     System.out.println(s"Published message $seqNo")
   }
 
-  (pubConnActor ? CreateChannel(ChannelActor.props(setupConfirmingPublisher _), Some("channel"))).mapTo[ChannelCreated] map {
+  (pubConnActor ? CreateChannel(ChannelActor.props(setupConfirmingPublisher), Some("channel"))).mapTo[ChannelCreated] map {
     case ChannelCreated(chActor) =>
       System.out.println("Publisher channel created")
       system.scheduler.schedule(0.seconds, 2.millis, chActor, ChannelMessage {
@@ -95,7 +95,7 @@ object ConfirmsExample extends App {
       }
     })
   }
-  consumerConnActor ! CreateChannel(ChannelActor.props(setupConsumer _), Some("channel"))
+  consumerConnActor ! CreateChannel(ChannelActor.props(setupConsumer), Some("channel"))
 
   /* --- Letting the app run --- */
 

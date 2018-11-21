@@ -20,23 +20,16 @@ object ChannelActor {
   private[rabbitmq] case class InMemory(queue: Queue[OnChannel] = Queue()) extends Data
   private[rabbitmq] case class Connected(channel: Channel) extends Data
 
-  final val DefaultDispatcherId = "akka-rabbitmq.default-channel-dispatcher"
-
-  // For binary compatibility reasons, this version of props is still here
-  def props(setupChannel: (Channel, ActorRef) => Any): Props =
-    props(setupChannel, DefaultDispatcherId)
-
-  def props(
-    setupChannel: (Channel, ActorRef) => Any = (_, _) => (),
-    dispatcher: String = DefaultDispatcherId): Props =
-    Props(classOf[ChannelActor], setupChannel).withDispatcher(dispatcher)
+  def props(setupChannel: (Channel, ActorRef) => Any = (_, _) => ()): Props =
+    Props(classOf[ChannelActor], setupChannel)
 
   private[rabbitmq] case class Retrying(retries: Int, onChannel: OnChannel) extends OnChannel {
     def apply(channel: Channel) = onChannel(channel)
   }
 }
 
-class ChannelActor(setupChannel: (Channel, ActorRef) => Any) extends RabbitMqActor
+class ChannelActor(setupChannel: (Channel, ActorRef) => Any)
+  extends RabbitMqActor
   with FSM[ChannelActor.State, ChannelActor.Data] {
 
   import ChannelActor._

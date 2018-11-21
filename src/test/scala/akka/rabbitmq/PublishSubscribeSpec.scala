@@ -30,7 +30,7 @@ class PublishSubscribeSpec extends ActorSpec {
         channel.queueBind(queue, exchange, "")
       }
 
-      connection ! CreateChannel(ChannelActor.props(setupPublisher _), Some("publisher"))
+      connection ! CreateChannel(ChannelActor.props(setupPublisher), Some("publisher"))
       val ChannelCreated(publisher) = expectMsgType[ChannelCreated]
 
       def setupSubscriber(channel: Channel, self: ActorRef) = {
@@ -44,7 +44,7 @@ class PublishSubscribeSpec extends ActorSpec {
         channel.basicConsume(queue, true, consumer)
       }
 
-      connection ! CreateChannel(ChannelActor.props(setupSubscriber _), Some("subscriber"))
+      connection ! CreateChannel(ChannelActor.props(setupSubscriber), Some("subscriber"))
       val ChannelCreated(subscriber) = expectMsgType[ChannelCreated]
 
       awaitAssert {

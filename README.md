@@ -205,7 +205,7 @@ object PublishSubscribe extends App {
     val queue = channel.queueDeclare().getQueue
     channel.queueBind(queue, exchange, "")
   }
-  connection ! CreateChannel(ChannelActor.props(setupPublisher _), Some("publisher"))
+  connection ! CreateChannel(ChannelActor.props(setupPublisher), Some("publisher"))
 
   def setupSubscriber(channel: Channel, self: ActorRef) {
     val queue = channel.queueDeclare().getQueue
@@ -217,7 +217,7 @@ object PublishSubscribe extends App {
     }
     channel.basicConsume(queue, true, consumer)
   }
-  connection ! CreateChannel(ChannelActor.props(setupSubscriber _), Some("subscriber"))
+  connection ! CreateChannel(ChannelActor.props(setupSubscriber), Some("subscriber"))
 
   Future {
     def loop(n: Long) {
