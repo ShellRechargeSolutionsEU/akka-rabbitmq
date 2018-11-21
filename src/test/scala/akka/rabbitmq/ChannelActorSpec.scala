@@ -37,7 +37,7 @@ class ChannelActorSpec extends ActorSpec with Mockito {
     }
     "process message if has channel, and when fails but channel is still open, drops the message and reconnects" in new TestScope {
       actorRef.setState(Connected, Connected(channel))
-      actorRef ! ChannelMessage(onChannelFailure)
+      actorRef ! ChannelMessage(onChannelFailure, dropIfNoChannel = false)
       state mustEqual disconnected()
       expectMsg(ProvideChannel)
     }
