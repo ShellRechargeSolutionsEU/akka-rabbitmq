@@ -9,9 +9,9 @@ homepage := Some(new URL("https://github.com/NewMotion/akka-rabbitmq"))
 def akka(scalaVersion: String) = {
   val version = "2.5.+"
 
-  def libs(xs: String*) = xs.map(x => "com.typesafe.akka" %% s"akka-$x" % version % "provided")
+  def libs(xs: String*) = xs.map(x => "com.typesafe.akka" %% s"akka-$x" % version)
 
-  libs("actor") ++ libs("testkit").map(_ % "test")
+  libs("actor").map(_ % "provided") ++ libs("testkit").map(_ % "test")
 }
 
 libraryDependencies ++= {
