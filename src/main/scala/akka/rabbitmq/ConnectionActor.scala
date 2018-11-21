@@ -89,6 +89,8 @@ class ConnectionActor(
 
     case Event(_: AmqpShutdownSignal, _) => stay()
 
+    case Event(_: Reconnect, _) => stay()
+
     case Event(ProvideChannel, _) =>
       log.debug("{} can't create channel for {} in disconnected state", header(Disconnected, ProvideChannel), sender())
       stay()
