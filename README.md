@@ -198,16 +198,14 @@ Here is [RabbitMQ Publish/Subscribe](http://www.rabbitmq.com/tutorials/tutorial-
 object PublishSubscribe extends App {
   implicit val system = ActorSystem()
   val factory = new ConnectionFactory()
-  val connection = system.actorOf(ConnectionActor.props(factory), "rabbitmq")
+  val connection = system.actorOf(ConnectionActor.props(factory), "akka-rabbitmq")
   val exchange = "amq.fanout"
-
 
   def setupPublisher(channel: Channel, self: ActorRef) {
     val queue = channel.queueDeclare().getQueue
     channel.queueBind(queue, exchange, "")
   }
-  connection ! CreateChannel(ChannelActor.props(setupPublisher), Some("publisher"))
-
+  connection ! CreateChannel(ChannelActor.props(setupPublisher _), Some("publisher"))
 
   def setupSubscriber(channel: Channel, self: ActorRef) {
     val queue = channel.queueDeclare().getQueue
@@ -219,12 +217,11 @@ object PublishSubscribe extends App {
     }
     channel.basicConsume(queue, true, consumer)
   }
-  connection ! CreateChannel(ChannelActor.props(setupSubscriber), Some("subscriber"))
-
+  connection ! CreateChannel(ChannelActor.props(setupSubscriber _), Some("subscriber"))
 
   Future {
     def loop(n: Long) {
-      val publisher = system.actorFor("/user/rabbitmq/publisher")
+      val publisher = system.actorSelection("/user/rabbitmq/publisher")
 
       def publish(channel: Channel) {
         channel.basicPublish(exchange, "", null, toBytes(n))
@@ -247,16 +244,15 @@ object PublishSubscribe extends App {
 
  * Fix: proper error handling of close and createChannel
  * Fix: close connection/channel if setup callback fails
- * Fix: take into account deadletters to channel actors
+ * Fix: take into account dead letters to channel actors
  * Fix: take into account blocking nature of new connections and channels
  * Fix: channel actor shouldn't ask for new channel if connection shutdown
- * Change default behaviour of ChannelMessage to not drop msgs if no channel
  * Log warning when a message isn't retried any longer
  * Added more debug logging
 
  * Update to latest dependencies:
 
-     * Akka: 2.5.8 -> 2.5.13
+     * Akka: 2.5.8 -> 2.5.+ (provided)
      * amqp-client: 5.1.1 -> 5.4.2
      * Typesafe Config: 1.3.2 -> 1.3.3
      * Specs2: 4.0.2 -> 4.3.4

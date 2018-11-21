@@ -11,14 +11,14 @@ import concurrent.ExecutionContext.Implicits.global
 object PublishSubscribe extends App {
   implicit val system = ActorSystem()
   val factory = new ConnectionFactory()
-  val connection = system.actorOf(ConnectionActor.props(factory), "rabbitmq")
+  val connection = system.actorOf(ConnectionActor.props(factory), "akka-rabbitmq")
   val exchange = "amq.fanout"
 
   def setupPublisher(channel: Channel, self: ActorRef) = {
     val queue = channel.queueDeclare().getQueue
     channel.queueBind(queue, exchange, "")
   }
-  connection ! CreateChannel(ChannelActor.props(setupPublisher), Some("publisher"))
+  connection ! CreateChannel(ChannelActor.props(setupPublisher _), Some("publisher"))
 
   def setupSubscriber(channel: Channel, self: ActorRef) = {
     val queue = channel.queueDeclare().getQueue
@@ -30,7 +30,7 @@ object PublishSubscribe extends App {
     }
     channel.basicConsume(queue, true, consumer)
   }
-  connection ! CreateChannel(ChannelActor.props(setupSubscriber), Some("subscriber"))
+  connection ! CreateChannel(ChannelActor.props(setupSubscriber _), Some("subscriber"))
 
   Future {
     def loop(n: Long) {

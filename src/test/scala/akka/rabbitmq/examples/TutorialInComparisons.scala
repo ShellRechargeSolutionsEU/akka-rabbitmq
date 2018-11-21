@@ -57,7 +57,7 @@ class TutorialInComparisons(implicit system: ActorSystem) {
     def setupChannel(channel: Channel, self: ActorRef) = {
       channel.queueDeclare("queue_name", false, false, false, null)
     }
-    val _: ActorRef = connectionActor.createChannel(ChannelActor.props(setupChannel))
+    val _: ActorRef = connectionActor.createChannel(ChannelActor.props(setupChannel _))
   }
 
   {

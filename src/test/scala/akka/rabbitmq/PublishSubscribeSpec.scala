@@ -16,13 +16,13 @@ class PublishSubscribeSpec extends ActorSpec {
 
     "Publish and Subscribe" in new TestScope {
       val factory = new ConnectionFactory()
-      val config = com.typesafe.config.ConfigFactory.load().getConfig("rabbitmq")
+      val config = com.typesafe.config.ConfigFactory.load().getConfig("akka-rabbitmq")
       factory.setHost(config.getString("host"))
       factory.setPort(config.getInt("port"))
       factory.setUsername(config.getString("username"))
       factory.setPassword(config.getString("password"))
 
-      val connection = system.actorOf(ConnectionActor.props(factory), "rabbitmq")
+      val connection = system.actorOf(ConnectionActor.props(factory), "akka-rabbitmq")
       val exchange = "amq.fanout"
 
       def setupPublisher(channel: Channel, self: ActorRef) = {
@@ -30,7 +30,7 @@ class PublishSubscribeSpec extends ActorSpec {
         channel.queueBind(queue, exchange, "")
       }
 
-      connection ! CreateChannel(ChannelActor.props(setupPublisher), Some("publisher"))
+      connection ! CreateChannel(ChannelActor.props(setupPublisher _), Some("publisher"))
       val ChannelCreated(publisher) = expectMsgType[ChannelCreated]
 
       def setupSubscriber(channel: Channel, self: ActorRef) = {
@@ -44,7 +44,7 @@ class PublishSubscribeSpec extends ActorSpec {
         channel.basicConsume(queue, true, consumer)
       }
 
-      connection ! CreateChannel(ChannelActor.props(setupSubscriber), Some("subscriber"))
+      connection ! CreateChannel(ChannelActor.props(setupSubscriber _), Some("subscriber"))
       val ChannelCreated(subscriber) = expectMsgType[ChannelCreated]
 
       awaitAssert {

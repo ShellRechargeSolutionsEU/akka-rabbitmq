@@ -5,6 +5,7 @@ import concurrent.duration._
 import scala.concurrent.Future
 import scala.concurrent.blocking
 import scala.util.Success
+import scala.util.control.NonFatal
 
 /**
  * @author Yaroslav Klymko
@@ -27,19 +28,30 @@ object ConnectionActor {
   case class NewConnection(connection: Connection) extends Message
   case class SetupChildren(refs: Iterable[ActorRef]) extends Message
 
+  final val DefaultDispatcherId = "akka-rabbitmq.default-connection-dispatcher"
+
+  // For binary compatibility reasons, this version of props is still here
   def props(
-    factory:           ConnectionFactory,
-    reconnectionDelay: FiniteDuration                = 10.seconds,
-    setupConnection:   (Connection, ActorRef) => Any = (_, _) => ()): Props =
+    factory: ConnectionFactory,
+    reconnectionDelay: FiniteDuration,
+    setupConnection: (Connection, ActorRef) => Any): Props =
+    props(factory, reconnectionDelay, setupConnection, DefaultDispatcherId)
+
+  def props(
+    factory: ConnectionFactory,
+    reconnectionDelay: FiniteDuration = 10.seconds,
+    setupConnection: (Connection, ActorRef) => Any = (_, _) => (),
+    dispatcher: String = DefaultDispatcherId): Props =
     Props(classOf[ConnectionActor], factory, reconnectionDelay, setupConnection)
+      .withDispatcher(dispatcher)
 }
 
 class ConnectionActor(
-    factory:           ConnectionFactory,
-    reconnectionDelay: FiniteDuration,
-    setupConnection:   (Connection, ActorRef) => Any)
-  extends RabbitMqActor
+  factory: ConnectionFactory,
+  reconnectionDelay: FiniteDuration,
+  setupConnection: (Connection, ActorRef) => Any) extends RabbitMqActor
   with FSM[ConnectionActor.State, ConnectionActor.Data] {
+
   import ConnectionActor._
 
   implicit val executionContext = context.dispatcher
@@ -174,7 +186,7 @@ class ConnectionActor(
           try {
             setupConnection(connection, self)
           } catch {
-            case throwable: Throwable =>
+            case NonFatal(throwable) =>
               log.debug("{} setup connection callback error {}", self.path, connection)
               close(connection)
               throw throwable

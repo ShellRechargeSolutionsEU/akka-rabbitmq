@@ -4,6 +4,7 @@ import akka.actor.{ Props, ActorRef, FSM }
 import collection.immutable.Queue
 import ConnectionActor.ProvideChannel
 import scala.annotation.tailrec
+import scala.util.control.NonFatal
 
 /**
  * @author Yaroslav Klymko
@@ -19,16 +20,23 @@ object ChannelActor {
   private[rabbitmq] case class InMemory(queue: Queue[OnChannel] = Queue()) extends Data
   private[rabbitmq] case class Connected(channel: Channel) extends Data
 
-  def props(setupChannel: (Channel, ActorRef) => Any = (_, _) => ()): Props =
-    Props(classOf[ChannelActor], setupChannel)
+  final val DefaultDispatcherId = "akka-rabbitmq.default-channel-dispatcher"
+
+  // For binary compatibility reasons, this version of props is still here
+  def props(setupChannel: (Channel, ActorRef) => Any): Props =
+    props(setupChannel, DefaultDispatcherId)
+
+  def props(
+    setupChannel: (Channel, ActorRef) => Any = (_, _) => (),
+    dispatcher: String = DefaultDispatcherId): Props =
+    Props(classOf[ChannelActor], setupChannel).withDispatcher(dispatcher)
 
   private[rabbitmq] case class Retrying(retries: Int, onChannel: OnChannel) extends OnChannel {
     def apply(channel: Channel) = onChannel(channel)
   }
 }
 
-class ChannelActor(setupChannel: (Channel, ActorRef) => Any)
-  extends RabbitMqActor
+class ChannelActor(setupChannel: (Channel, ActorRef) => Any) extends RabbitMqActor
   with FSM[ChannelActor.State, ChannelActor.Data] {
 
   import ChannelActor._
@@ -116,15 +124,15 @@ class ChannelActor(setupChannel: (Channel, ActorRef) => Any)
       close(channel)
       stay using Connected(setup(newChannel))
 
-    case Event(shutdownSignal: ShutdownSignal, Connected(channel)) =>
-      (shutdownSignal match {
+    case Event(msg: ShutdownSignal, Connected(channel)) =>
+      (msg match {
         case ParentShutdownSignal =>
           Some(dropChannel _) // The parent is responsible for providing the new channel.
         case amqpSignal: AmqpShutdownSignal if amqpSignal.appliesTo(channel) =>
           Some(dropChannelAndRequestNewChannel _)
         case _ => None
       }).fold(stay()) { shutdownAction =>
-        log.debug("{} shutdown", header(Connected, shutdownSignal))
+        log.debug("{} shutdown", header(Connected, msg))
         shutdownAction(channel)
         goto(Disconnected) using InMemory()
       }
@@ -171,7 +179,7 @@ class ChannelActor(setupChannel: (Channel, ActorRef) => Any)
     try {
       setupChannel(channel, self)
     } catch {
-      case throwable: Throwable =>
+      case NonFatal(throwable) =>
         log.debug("{} setup channel callback error {}", self.path, channel)
         close(channel)
         throw throwable
