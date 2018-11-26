@@ -113,7 +113,7 @@ class ChannelActor(setupChannel: (Channel, ActorRef) => Any)
 
   when(Connected) {
     case Event(newChannel: Channel, Connected(channel)) =>
-      log.debug("{} closing unexpected channel {}", header(Connected, newChannel), channel)
+      log.debug("{} unexpectedly received a new channel, closing channel {}", header(Connected, newChannel), channel)
       close(channel)
       stay using Connected(setup(newChannel))
 
@@ -199,7 +199,7 @@ class ChannelActor(setupChannel: (Channel, ActorRef) => Any)
 
   @scala.throws[Exception](classOf[Exception])
   override def postRestart(reason: Throwable) {
-    log.debug(s"{} child restarted with reason {}", self.path, reason.getMessage)
+    log.debug(s"{} child restarted with exception {}, reason: {}", self.path, reason.getClass.getCanonicalName, reason.getMessage)
     super.postRestart(reason)
     askForChannel()
   }

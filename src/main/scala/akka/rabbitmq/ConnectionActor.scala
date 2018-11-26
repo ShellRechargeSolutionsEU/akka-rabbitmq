@@ -108,10 +108,10 @@ class ConnectionActor(
       stay()
 
     case Event(msg @ Reconnect(oldConnection), Connected(connection)) =>
+      // Check the connection id to guard against Reconnect messages
+      // still queued in the mailbox during the previous connection.
       if (oldConnection.getId == connection.getId) {
-        dropConnectionAndNotifyChildren(connection)
-        log.info("{} reconnecting to {} in {}", header(Connected, msg), factory.uri, reconnectionDelay)
-        setTimer(reconnectTimer, Connect, reconnectionDelay, repeat = false)
+        reconnect(connection, msg)
         goto(Disconnected) using NoConnection
       } else {
         log.debug("{} already reconnected to {}", header(Connected, msg), factory.uri)
@@ -131,9 +131,9 @@ class ConnectionActor(
       // It is important that we check if a shutdown signal pertains to the current connection.
       if (msg.appliesTo(connection)) {
         log.debug("{} shutdown (initiated by app {})", header(Connected, msg), cause.isInitiatedByApplication)
-        self ! Reconnect(connection)
-      }
-      stay()
+        reconnect(connection, msg)
+        goto(Disconnected) using NoConnection
+      } else stay()
   }
 
   whenUnhandled {
@@ -163,12 +163,18 @@ class ConnectionActor(
 
   initialize()
 
-  private def dropConnectionAndNotifyChildren(brokenConnection: Connection) {
-    log.debug("{} closing broken connection {}", self.path, brokenConnection)
-    close(brokenConnection)
+  private def reconnect(connection: Connection, msg: Any) = {
+    def dropConnectionAndNotifyChildren() = {
+      log.debug("{} closing broken connection {}", header(Connected, msg), connection)
+      close(connection)
 
-    log.debug("{} sending shutdown signal to {} children", self.path, children.size)
-    children.foreach(_ ! ParentShutdownSignal)
+      log.debug("{} sending shutdown signal to {} children", header(Connected, msg), children.size)
+      children.foreach(_ ! ParentShutdownSignal)
+    }
+
+    dropConnectionAndNotifyChildren()
+    log.info("{} reconnecting to {} in {}", header(Connected, msg), factory.uri, reconnectionDelay)
+    setTimer(reconnectTimer, Connect, reconnectionDelay, repeat = false)
   }
 
   /**
@@ -225,11 +231,11 @@ class ConnectionActor(
     }
 
   private def safeCreateChannel(connection: Connection): Option[Channel] =
-    safe(connection.createChannel()).map { channel =>
+    safe(connection.createChannel()).flatMap { channel =>
       if (channel == null) {
         log.warning("{} no channels available on connection {}", self.path, connection)
       }
-      channel
+      Option(channel)
     }
 
   private[rabbitmq] def children = context.children

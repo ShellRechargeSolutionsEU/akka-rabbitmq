@@ -1,6 +1,6 @@
 package com.newmotion.akka.rabbitmq
 
-import scala.util.control.NonFatal
+import scala.util._
 import akka.actor.Actor
 import akka.event.LoggingAdapter
 import com.rabbitmq.client.{ ShutdownListener, ShutdownSignalException }
@@ -19,13 +19,16 @@ trait RabbitMqActor extends Actor with ShutdownListener {
   }
 
   def close(x: AutoCloseable): Unit = try x.close() catch {
-    case NonFatal(e) => log.error("close {}", e)
+    case control.NonFatal(e) => log.error("close {}", e)
   }
 
-  def safe[T](f: => T): Option[T] = try Some(f) catch {
-    case _: IOException             => None
-    case _: ShutdownSignalException => None
-    case _: TimeoutException        => None
+  def safe[T](f: => T): Option[T] = Try {
+    f
+  } match {
+    case Success(result) => Some(result)
+    case Failure(_: IOException) => None
+    case Failure(_: ShutdownSignalException) => None
+    case Failure(_: TimeoutException) => None
   }
 }
 

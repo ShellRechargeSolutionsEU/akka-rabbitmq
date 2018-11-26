@@ -249,7 +249,6 @@ object PublishSubscribe extends App {
  * Fix: channel actor shouldn't ask for new channel if connection shutdown
  * Log warning when a message isn't retried any longer
  * Added more debug logging
-
  * Update to latest dependencies:
 
      * Akka: 2.5.8 -> 2.5.+ (provided)
