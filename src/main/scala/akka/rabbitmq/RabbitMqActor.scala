@@ -25,10 +25,11 @@ trait RabbitMqActor extends Actor with ShutdownListener {
   def safe[T](f: => T): Option[T] = Try {
     f
   } match {
-    case Success(result) => Some(result)
-    case Failure(_: IOException) => None
+    case Success(result)                     => Some(result)
+    case Failure(_: IOException)             => None
     case Failure(_: ShutdownSignalException) => None
-    case Failure(_: TimeoutException) => None
+    case Failure(_: TimeoutException)        => None
+    case Failure(throwable)                  => throw throwable
   }
 }
 
