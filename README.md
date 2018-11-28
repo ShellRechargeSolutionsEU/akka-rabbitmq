@@ -26,7 +26,7 @@ using confirms can be found in this project under [ConfirmsExample.scala](https:
 ### Sbt
 Since version `3.0.0`
 ``` scala
-libraryDependencies += "com.newmotion" %% "akka-rabbitmq" % "5.0.4"
+libraryDependencies += "com.newmotion" %% "akka-rabbitmq" % "5.0.4-beta"
 ```
 
 To add earlier releases as a dependency, you have to add the NewMotion public repository to your resolver list:
@@ -41,7 +41,7 @@ Since version `4.0.0`
 <dependency>
     <groupId>com.newmotion</groupId>
     <artifactId>akka-rabbitmq_{2.11/2.12}</artifactId>
-    <version>5.0.4</version>
+    <version>5.0.4-beta</version>
 </dependency>
 ```
 
@@ -240,7 +240,7 @@ object PublishSubscribe extends App {
 ```
 
 ## Changelog
-### 5.0.4
+### 5.0.4-beta
 
  * Fix: proper error handling of close and createChannel
  * Fix: close connection/channel if setup callback fails
