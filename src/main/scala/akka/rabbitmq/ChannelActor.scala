@@ -74,8 +74,6 @@ class ChannelActor(setupChannel: (Channel, ActorRef) => Any)
 
   when(Disconnected) {
     case Event(channel: Channel, InMemory(queue)) =>
-      setup(channel)
-
       @tailrec
       def loop(qs: Queue[OnChannel]): State = qs.headOption match {
         case None => goto(Connected) using Connected(channel)
@@ -94,10 +92,15 @@ class ChannelActor(setupChannel: (Channel, ActorRef) => Any)
           }
       }
 
-      if (queue.nonEmpty) log.debug(
-        "{} processing {} queued messages {}",
-        header(Disconnected, channel), queue.size, queue.mkString("\n", "\n", ""))
-      loop(queue)
+      if (setup(channel)) {
+        if (queue.nonEmpty) log.debug(
+          "{} processing {} queued messages {}",
+          header(Disconnected, channel), queue.size, queue.mkString("\n", "\n", ""))
+        loop(queue)
+      } else {
+        dropChannelAndRequestNewChannel(channel)
+        stay()
+      }
 
     case Event(msg @ ChannelMessage(onChannel, dropIfNoChannel), InMemory(queue)) =>
       if (dropIfNoChannel) {
@@ -112,10 +115,10 @@ class ChannelActor(setupChannel: (Channel, ActorRef) => Any)
   }
 
   when(Connected) {
-    case Event(newChannel: Channel, Connected(channel)) =>
-      log.debug("{} unexpectedly received a new channel, closing channel {}", header(Connected, newChannel), channel)
+    case Event(channel: Channel, Connected(_)) =>
+      log.debug("{} closing unexpected channel {}", header(Connected, channel), channel)
       close(channel)
-      stay using Connected(setup(newChannel))
+      stay()
 
     case Event(msg: ShutdownSignal, Connected(channel)) =>
       (msg match {
@@ -166,18 +169,17 @@ class ChannelActor(setupChannel: (Channel, ActorRef) => Any)
 
   initialize()
 
-  private def setup(channel: Channel): Channel = {
+  private def setup(channel: Channel): Boolean = {
     channel.addShutdownListener(this)
     log.debug("{} setting up new channel {}", self.path, channel)
     try {
-      setupChannel(channel, self)
+      safe(setupChannel(channel, self)).isDefined
     } catch {
       case NonFatal(throwable) =>
         log.debug("{} setup channel callback error {}", self.path, channel)
         close(channel)
         throw throwable
     }
-    channel
   }
 
   private def dropChannelAndRequestNewChannel(broken: Channel) {
@@ -199,7 +201,7 @@ class ChannelActor(setupChannel: (Channel, ActorRef) => Any)
 
   @scala.throws[Exception](classOf[Exception])
   override def postRestart(reason: Throwable) {
-    log.debug(s"{} child restarted with exception {}, reason: {}", self.path, reason.getClass.getCanonicalName, reason.getMessage)
+    log.debug(s"{} child restarted with exception {}, reason: {}", self.path, reason, reason.getMessage)
     super.postRestart(reason)
     askForChannel()
   }

@@ -20,14 +20,12 @@ class ChannelActorSpec extends ActorSpec with Mockito {
       there was one(setupChannel).apply(channel, actorRef)
       there was one(channel).addShutdownListener(actor)
     }
-    "close old channel if new one received" in new TestScope {
+    "close channel if received unexpectedly" in new TestScope {
       actorRef.setState(Connected, Connected(channel))
       val newChannel = mock[Channel]
       actorRef ! newChannel
-      there was one(channel).close()
-      state mustEqual connected(newChannel)
-      there was one(setupChannel).apply(newChannel, actorRef)
-      there was one(newChannel).addShutdownListener(actor)
+      there was one(newChannel).close()
+      state mustEqual connected(channel)
     }
     "process message if has channel" in new TestScope {
       actorRef.setState(Connected, Connected(channel))

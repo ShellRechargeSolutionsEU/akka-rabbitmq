@@ -242,13 +242,14 @@ object PublishSubscribe extends App {
 ## Changelog
 ### 5.0.4-beta
 
- * Fix: proper error handling of close and createChannel
- * Fix: close connection/channel if setup callback fails
- * Fix: take into account dead letters to channel actors
- * Fix: take into account blocking nature of new connections and channels
- * Fix: channel actor shouldn't ask for new channel if connection shutdown
- * Log warning when a message isn't retried any longer
- * Added more debug logging
+ * Fix: proper error handling of close channel and create channel
+ * Fix: proper error handling of setup connection/channel callbacks
+ * Fix: if callback exception is uncaught, close connection/channel
+ * Fix: take into account blocking nature of new connection/channel
+ * Fix: close channel if the channel actor never got it (deadletter)
+ * Fix: channel actor shouldn't ask for channel after a connection shutdown
+ * If unexpectedly received a new channel, close it and use the old instead
+ * Log warning when a message isn't retried any longer + more debug logging
  * Update to latest dependencies:
 
      * Akka: 2.5.8 -> 2.5.+ (provided)

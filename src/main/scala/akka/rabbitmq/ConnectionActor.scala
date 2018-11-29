@@ -187,20 +187,19 @@ class ConnectionActor(
     Future {
       blocking {
         factory.setAutomaticRecoveryEnabled(false)
-        safe(factory.newConnection()).map { connection =>
+        log.debug("{} creating new connection", self.path)
+        safe(factory.newConnection()).flatMap { connection =>
           cancelTimer(reconnectTimer)
           connection.addShutdownListener(this)
           log.debug("{} setting up new connection {}", self.path, connection)
           try {
-            setupConnection(connection, self)
+            safe(setupConnection(connection, self)).map(_ => connection)
           } catch {
             case NonFatal(throwable) =>
               log.debug("{} setup connection callback error {}", self.path, connection)
               close(connection)
               throw throwable
           }
-
-          connection
         }
       }
     }

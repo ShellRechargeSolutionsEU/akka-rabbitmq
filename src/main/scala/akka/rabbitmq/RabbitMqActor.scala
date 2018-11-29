@@ -18,8 +18,13 @@ trait RabbitMqActor extends Actor with ShutdownListener {
     self ! AmqpShutdownSignal(cause)
   }
 
-  def close(x: AutoCloseable): Unit = try x.close() catch {
-    case control.NonFatal(e) => log.error("close {}", e)
+  def close(x: AutoCloseable): Unit = Try {
+    x.close()
+  } match {
+    case Success(_) =>
+      log.debug("close success")
+    case Failure(throwable) =>
+      log.error("close {}", throwable)
   }
 
   def safe[T](f: => T): Option[T] = Try {
