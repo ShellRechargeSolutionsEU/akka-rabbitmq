@@ -221,7 +221,7 @@ object PublishSubscribe extends App {
 
   Future {
     def loop(n: Long) {
-      val publisher = system.actorSelection("/user/rabbitmq/publisher")
+      val publisher = system.actorSelection("/user/akka-rabbitmq/publisher")
 
       def publish(channel: Channel) {
         channel.basicPublish(exchange, "", null, toBytes(n))
