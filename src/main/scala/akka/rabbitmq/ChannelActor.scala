@@ -182,7 +182,7 @@ class ChannelActor(setupChannel: (Channel, ActorRef) => Any)
     }
   }
 
-  private def dropChannelAndRequestNewChannel(broken: Channel) {
+  private def dropChannelAndRequestNewChannel(broken: Channel): Unit = {
     dropChannel(broken)
     askForChannel()
   }
@@ -192,7 +192,7 @@ class ChannelActor(setupChannel: (Channel, ActorRef) => Any)
     close(brokenChannel)
   }
 
-  private def askForChannel() {
+  private def askForChannel(): Unit = {
     log.debug("{} asking for new channel", self.path)
     connectionActor ! ProvideChannel
   }
@@ -200,7 +200,7 @@ class ChannelActor(setupChannel: (Channel, ActorRef) => Any)
   private[rabbitmq] def connectionActor = context.parent
 
   @scala.throws[Exception](classOf[Exception])
-  override def postRestart(reason: Throwable) {
+  override def postRestart(reason: Throwable): Unit = {
     log.debug(s"{} child restarted with exception {}, reason: {}", self.path, reason, reason.getMessage)
     super.postRestart(reason)
     askForChannel()

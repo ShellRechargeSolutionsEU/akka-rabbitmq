@@ -6,6 +6,10 @@ enablePlugins(OssLibPlugin)
 licenses := Seq(("Apache License, Version 2.0", url("http://www.apache.org/licenses/LICENSE-2.0")))
 homepage := Some(new URL("https://github.com/NewMotion/akka-rabbitmq"))
 
+scalaVersion := tnm.ScalaVersion.prev
+
+crossScalaVersions := Seq(tnm.ScalaVersion.aged, tnm.ScalaVersion.curr, tnm.ScalaVersion.prev)
+
 def akka(scalaVersion: String) = {
   val version = "2.5.+"
 
@@ -18,8 +22,8 @@ libraryDependencies ++= {
   akka(scalaVersion.value) ++
   Seq(
     "com.rabbitmq" % "amqp-client" % "5.7.1",
-    "com.typesafe" % "config" % "1.3.3" % "test",
-    "org.specs2" %% "specs2-mock" % "4.3.4" % "test"
+    "com.typesafe" % "config" % "1.3.4" % "test",
+    "org.specs2" %% "specs2-mock" % "4.5.1" % "test"
   )
 }
 

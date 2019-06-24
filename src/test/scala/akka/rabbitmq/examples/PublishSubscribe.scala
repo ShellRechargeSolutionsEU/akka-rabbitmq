@@ -24,7 +24,7 @@ object PublishSubscribe extends App {
     val queue = channel.queueDeclare().getQueue
     channel.queueBind(queue, exchange, "")
     val consumer = new DefaultConsumer(channel) {
-      override def handleDelivery(consumerTag: String, envelope: Envelope, properties: BasicProperties, body: Array[Byte]) {
+      override def handleDelivery(consumerTag: String, envelope: Envelope, properties: BasicProperties, body: Array[Byte]): Unit = {
         println("received: " + fromBytes(body))
       }
     }
@@ -33,10 +33,10 @@ object PublishSubscribe extends App {
   connection ! CreateChannel(ChannelActor.props(setupSubscriber), Some("subscriber"))
 
   Future {
-    def loop(n: Long) {
+    def loop(n: Long): Unit = {
       val publisher = system.actorSelection("/user/rabbitmq/publisher")
 
-      def publish(channel: Channel) {
+      def publish(channel: Channel): Unit = {
         channel.basicPublish(exchange, "", null, toBytes(n))
       }
       publisher ! ChannelMessage(publish, dropIfNoChannel = false)

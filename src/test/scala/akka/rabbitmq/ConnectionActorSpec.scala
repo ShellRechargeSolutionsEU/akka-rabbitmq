@@ -153,7 +153,7 @@ class ConnectionActorSpec extends ActorSpec with Mockito {
       val createChannel = CreateChannel(ChannelActor.props(setupChannel))
 
       class TestConnectionActor extends ConnectionActor(factory, reconnectionDelay, setup) {
-        override def preStart() {}
+        override def preStart(): Unit = {}
       }
 
       val connectionActorRef = TestFSMRef(new TestConnectionActor)
@@ -172,7 +172,7 @@ class ConnectionActorSpec extends ActorSpec with Mockito {
     class TestConnectionActor extends ConnectionActor(factory, reconnectionDelay, setup) {
       override def children = Iterable(testActor)
       override def newChild(props: Props, name: Option[String]) = testActor
-      override def preStart() {}
+      override def preStart(): Unit = {}
     }
 
     val actorRef = TestFSMRef(new TestConnectionActor)

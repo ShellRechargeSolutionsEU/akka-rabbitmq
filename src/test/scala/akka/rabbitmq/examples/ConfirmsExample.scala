@@ -69,6 +69,7 @@ object ConfirmsExample extends App {
       if (!multiple) {
         System.out.println(s"Message with ID $seqNo acknowledged")
         unconfirmed -= seqNo
+        ()
       } else {
         System.out.println(s"Messages with IDs up to $seqNo acknowledged")
         unconfirmed --= unconfirmed.filter(elem => elem <= seqNo && elem > confirmedUpTo)

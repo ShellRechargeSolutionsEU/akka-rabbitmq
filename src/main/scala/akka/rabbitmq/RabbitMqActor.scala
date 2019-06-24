@@ -13,7 +13,7 @@ import java.util.concurrent.TimeoutException
 trait RabbitMqActor extends Actor with ShutdownListener {
   def log: LoggingAdapter
 
-  def shutdownCompleted(cause: ShutdownSignalException) {
+  def shutdownCompleted(cause: ShutdownSignalException): Unit = {
     log.debug("on shutdownCompleted {}", cause)
     self ! AmqpShutdownSignal(cause)
   }
