@@ -244,7 +244,7 @@ class ConnectionActor(
     case None    => context.actorOf(props)
   }
 
-  override def preStart() {
+  override def preStart(): Unit = {
     self ! Connect
   }
 }

@@ -65,7 +65,7 @@ class TutorialInComparisons(implicit system: ActorSystem) {
   }
 
   {
-    def publish(channel: Channel) {
+    def publish(channel: Channel): Unit = {
       channel.basicPublish("", "queue_name", null, "Hello world".getBytes)
     }
     channelActor ! ChannelMessage(publish)

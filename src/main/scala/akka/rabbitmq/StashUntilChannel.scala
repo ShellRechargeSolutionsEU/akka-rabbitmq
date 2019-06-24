@@ -32,9 +32,9 @@ trait StashUntilChannel {
     case x => self.tell(QueuedMsg(x, sender()), sender())
   }
 
-  def setupChannel(channel: Channel, channelActor: ActorRef) {}
+  def setupChannel(channel: Channel, channelActor: ActorRef): Unit = {}
 
-  def createChannel() {
+  def createChannel(): Unit = {
     connectionActor ! CreateChannel(ChannelActor.props(setupChannel))
   }
 
@@ -50,17 +50,17 @@ trait StashUntilChannel {
     case x => context become receiveChannelCreated(stash enqueue QueuedMsg(x, sender()))
   }
 
-  def closeChannel() {
+  def closeChannel(): Unit = {
     channelActor.foreach(context.stop)
   }
 
-  override def preStart() {
+  override def preStart(): Unit = {
     createChannel()
   }
 
   def receive = receiveChannelCreated(Queue())
 
-  override def postStop() {
+  override def postStop(): Unit = {
     closeChannel()
   }
 }

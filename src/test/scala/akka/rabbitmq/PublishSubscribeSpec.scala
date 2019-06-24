@@ -37,7 +37,7 @@ class PublishSubscribeSpec extends ActorSpec {
         val queue = channel.queueDeclare().getQueue
         channel.queueBind(queue, exchange, "")
         val consumer = new DefaultConsumer(channel) {
-          override def handleDelivery(consumerTag: String, envelope: Envelope, properties: BasicProperties, body: Array[Byte]) {
+          override def handleDelivery(consumerTag: String, envelope: Envelope, properties: BasicProperties, body: Array[Byte]): Unit = {
             testActor ! fromBytes(body)
           }
         }
