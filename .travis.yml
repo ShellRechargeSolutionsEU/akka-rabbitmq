@@ -1,4 +1,5 @@
 language: scala
+dist: trusty
 scala:
   - 2.12.1
   - 2.11.8  
