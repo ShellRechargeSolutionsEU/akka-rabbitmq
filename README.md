@@ -240,6 +240,18 @@ object PublishSubscribe extends App {
 ```
 
 ## Changelog
+
+### 5.1.2
+
+ * Update to latest dependencies:
+
+     * amqp-client: 5.7.1 -> 5.7.3
+     * Typesafe Config: 1.3.4 -> 1.4.0
+     * Specs2: 4.5.1 -> 4.8.1
+     * SBT: 1.2.8 -> 1.3.4
+     * sbt-build-seed: 5.0.1 -> 5.0.4
+     * sbt-sonatype: 2.3 -> 3.8.1
+
 ### 5.0.4-beta
 
  * Fix: proper error handling of close channel and create channel
