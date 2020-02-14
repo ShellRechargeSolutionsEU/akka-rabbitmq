@@ -149,6 +149,8 @@ class ConnectionActorSpec extends ActorSpec with Mockito {
     }
 
     "create only one channel when reconnecting" in new TestScopeBase {
+      override val reconnectionDelay = FiniteDuration(0, SECONDS)
+
       val setupChannel = mock[(Channel, ActorRef) => Unit]
       val createChannel = CreateChannel(ChannelActor.props(setupChannel))
 
@@ -164,7 +166,7 @@ class ConnectionActorSpec extends ActorSpec with Mockito {
       there was one(initialConnection).createChannel
 
       connectionActorRef ! AmqpShutdownSignal(shutdownSignal())
-      eventually(there was one(recoveredConnection).createChannel)
+      (1 to 10).map(_ => there was atMostOne(recoveredConnection).createChannel)
     }
   }
 
