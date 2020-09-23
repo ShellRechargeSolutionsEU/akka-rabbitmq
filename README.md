@@ -24,9 +24,9 @@ using confirms can be found in this project under [ConfirmsExample.scala](https:
 ## Setup
 
 ### Sbt
-Since version `3.0.0`
+Since version `3.0.0`:
 ``` scala
-libraryDependencies += "com.newmotion" %% "akka-rabbitmq" % "5.0.4-beta"
+libraryDependencies += "com.newmotion" %% "akka-rabbitmq" % "6.0.0"
 ```
 
 To add earlier releases as a dependency, you have to add the NewMotion public repository to your resolver list:
@@ -36,11 +36,20 @@ libraryDependencies += "com.thenewmotion.akka" %% "akka-rabbitmq" % "2.3"
 ```
 
 ### Maven
+Since version `6.0.0`
+```xml
+<dependency>
+    <groupId>com.newmotion</groupId>
+    <artifactId>akka-rabbitmq_{2.12/2.13}</artifactId>
+    <version>6.0.0</version>
+</dependency>
+```
+
 Since version `4.0.0`
 ```xml
 <dependency>
     <groupId>com.newmotion</groupId>
-    <artifactId>akka-rabbitmq_{2.11/2.12}</artifactId>
+    <artifactId>akka-rabbitmq_{2.12/2.13}</artifactId>
     <version>5.0.4-beta</version>
 </dependency>
 ```
@@ -240,6 +249,13 @@ object PublishSubscribe extends App {
 ```
 
 ## Changelog
+
+### 6.0.0
+ * Drop support of Scala 2.11
+ * Update dependencies:
+ 
+    * amqp-client: 5.7.3 -> 5.9.0
+    * akka: 2.5.+ -> 2.6.+
 
 ### 5.1.2
 
