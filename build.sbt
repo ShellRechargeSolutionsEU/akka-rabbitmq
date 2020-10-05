@@ -3,29 +3,24 @@ name := "akka-rabbitmq"
 
 enablePlugins(OssLibPlugin)
 
-licenses := Seq(("Apache License, Version 2.0", url("http://www.apache.org/licenses/LICENSE-2.0")))
+licenses := Seq(
+  ("Apache License, Version 2.0",
+   url("http://www.apache.org/licenses/LICENSE-2.0")))
+
 homepage := Some(new URL("https://github.com/NewMotion/akka-rabbitmq"))
 
-scalaVersion := tnm.ScalaVersion.prev
+scalaVersion := tnm.ScalaVersion.curr
 
-crossScalaVersions := Seq(tnm.ScalaVersion.aged, tnm.ScalaVersion.curr, tnm.ScalaVersion.prev)
+crossScalaVersions := Seq(tnm.ScalaVersion.curr, tnm.ScalaVersion.prev)
 
-def akka(scalaVersion: String) = {
-  val version = "2.5.+"
+def akka(name: String): ModuleID = "com.typesafe.akka" %% s"akka-$name" % "2.6.+"
 
-  def libs(xs: String*) = xs.map(x => "com.typesafe.akka" %% s"akka-$x" % version)
-
-  libs("actor").map(_ % "provided") ++ libs("testkit").map(_ % "test")
-}
-
-libraryDependencies ++= {
-  akka(scalaVersion.value) ++
-  Seq(
-    "com.rabbitmq" % "amqp-client" % "5.9.0",
-    "com.typesafe" % "config" % "1.4.0" % "test",
-    "org.specs2" %% "specs2-mock" % "4.8.1" % "test"
-  )
-}
+libraryDependencies ++= Seq(
+  "com.rabbitmq" % "amqp-client" % "5.9.0",
+  akka("actor") % "provided",
+  akka("testkit") % "test",
+  "com.typesafe" % "config" % "1.4.0" % "test",
+  "org.specs2" %% "specs2-mock" % "4.10.3" % "test"
+)
 
 Format.settings
-
