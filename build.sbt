@@ -1,17 +1,15 @@
 organization := "com.newmotion"
 name := "akka-rabbitmq"
 
-enablePlugins(OssLibPlugin)
-
 licenses := Seq(
   ("Apache License, Version 2.0",
    url("http://www.apache.org/licenses/LICENSE-2.0")))
 
 homepage := Some(new URL("https://github.com/NewMotion/akka-rabbitmq"))
 
-scalaVersion := tnm.ScalaVersion.curr
+scalaVersion := "2.13.3"
 
-crossScalaVersions := Seq(tnm.ScalaVersion.curr, tnm.ScalaVersion.prev)
+crossScalaVersions := Seq("2.13.3", "2.12.12")
 
 def akka(name: String): ModuleID = "com.typesafe.akka" %% s"akka-$name" % "2.6.+"
 

@@ -29,12 +29,6 @@ Since version `3.0.0`:
 libraryDependencies += "com.newmotion" %% "akka-rabbitmq" % "6.0.0"
 ```
 
-To add earlier releases as a dependency, you have to add the NewMotion public repository to your resolver list:
-``` scala
-resolvers += "New Motion Repository" at "https://nexus.thenewmotion.com/content/groups/public/"
-libraryDependencies += "com.thenewmotion.akka" %% "akka-rabbitmq" % "2.3"
-```
-
 ### Maven
 Since version `6.0.0`
 ```xml
@@ -60,21 +54,6 @@ Since version `3.0.0`
     <groupId>com.thenewmotion</groupId>
     <artifactId>akka-rabbitmq_{2.11/2.12}</artifactId>
     <version>3.0.0</version>
-</dependency>
-```
-
-For prior releases
-```xml
-<repository>
-    <id>thenewmotion</id>
-    <name>New Motion Repository</name>
-    <url>http://nexus.thenewmotion.com/content/groups/public/</url>
-</repository>
-...
-<dependency>
-    <groupId>com.thenewmotion</groupId>
-    <artifactId>akka-rabbitmq_{2.11/2.12}</artifactId>
-    <version>2.3</version>
 </dependency>
 ```
 
