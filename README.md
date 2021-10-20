@@ -128,7 +128,7 @@ What's about custom actor:
 Actor style:
 ```scala
     // this function will be called each time new channel received
-    def setupChannel(channel: Channel, self: ActorRef) {
+    def setupChannel(channel: Channel, self: ActorRef) = {
       channel.queueDeclare("queue_name", false, false, false, null)
     }
     val channelActor: ActorRef = connectionActor.createChannel(ChannelActor.props(setupChannel))
@@ -141,7 +141,7 @@ Actor style:
 
 Using our `channelActor`:
 ```scala
-    def publish(channel: Channel) {
+    def publish(channel: Channel) = {
       channel.basicPublish("", "queue_name", null, "Hello world".getBytes)
     }
     channelActor ! ChannelMessage(publish)
@@ -189,17 +189,17 @@ object PublishSubscribe extends App {
   val connection = system.actorOf(ConnectionActor.props(factory), "akka-rabbitmq")
   val exchange = "amq.fanout"
 
-  def setupPublisher(channel: Channel, self: ActorRef) {
+  def setupPublisher(channel: Channel, self: ActorRef) = {
     val queue = channel.queueDeclare().getQueue
     channel.queueBind(queue, exchange, "")
   }
   connection ! CreateChannel(ChannelActor.props(setupPublisher), Some("publisher"))
 
-  def setupSubscriber(channel: Channel, self: ActorRef) {
+  def setupSubscriber(channel: Channel, self: ActorRef) = {
     val queue = channel.queueDeclare().getQueue
     channel.queueBind(queue, exchange, "")
     val consumer = new DefaultConsumer(channel) {
-      override def handleDelivery(consumerTag: String, envelope: Envelope, properties: BasicProperties, body: Array[Byte]) {
+      override def handleDelivery(consumerTag: String, envelope: Envelope, properties: BasicProperties, body: Array[Byte]): Unit = {
         println("received: " + fromBytes(body))
       }
     }
@@ -208,10 +208,11 @@ object PublishSubscribe extends App {
   connection ! CreateChannel(ChannelActor.props(setupSubscriber), Some("subscriber"))
 
   Future {
-    def loop(n: Long) {
+     @tailrc
+    def loop(n: Long) = {
       val publisher = system.actorSelection("/user/akka-rabbitmq/publisher")
 
-      def publish(channel: Channel) {
+      def publish(channel: Channel) = {
         channel.basicPublish(exchange, "", null, toBytes(n))
       }
       publisher ! ChannelMessage(publish, dropIfNoChannel = false)
@@ -236,21 +237,22 @@ using the login and password of guest and guest.
 
 ## Changelog
 
-### 6.0.3
+### 6.0.3-SNAPSHOT
 
 #### Code Updates
 
-* Fully qualified the package directory structures
+* Fully qualified the package directory structures as com.newmotion...
+* Merged PR #66 with Scala 3 compatibility changes
 * Cleaned up many warning messages that were found with IntelliJ 2021.2
 * Updated the Prop constructors
 * Updated deprecated setTimer() calls to startSingleTimer() in ConnectionActor.scala
 
 * Upgraded to Scala 2.13.6
-* Upgraded to SBT 1.5.5
+* Upgraded to SBT 1.5.5 and cleaned deprecated issues
 * Updated to latest dependencies:
     * ampq-client: 5.9.0 -> 5.13.1
     * com.typesafe .config: 1.4.0 -> 1.4.1
-    * org.specs2.specs2-mock: 4.10.3 -> 4.12.2
+    * org.specs2.specs2-mock: 4.10.3 -> 4.13.0
 
 ### 6.0.0
  * Drop support of Scala 2.11
