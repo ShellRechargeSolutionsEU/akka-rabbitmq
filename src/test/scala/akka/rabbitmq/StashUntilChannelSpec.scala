@@ -64,9 +64,9 @@ class StashUntilChannelSpec extends ActorSpec {
     case class Reply(channelActor: ActorRef)
 
     class TestStashUntil extends Actor with StashUntilChannel {
-      def connectionActor = connectionProbe.ref
+      def connectionActor: ActorRef = connectionProbe.ref
       def receiveWithChannel(channelActor: ActorRef) = {
-        case Command => sender ! Reply(channelActor)
+        case Command => sender() ! Reply(channelActor)
       }
     }
   }

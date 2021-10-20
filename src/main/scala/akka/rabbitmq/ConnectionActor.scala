@@ -1,9 +1,9 @@
 package com.newmotion.akka.rabbitmq
 
-import akka.actor.{ ActorRef, DeadLetter, Props, FSM }
+import akka.actor.{ ActorRef, DeadLetter, FSM, Props }
+
 import concurrent.duration._
-import scala.concurrent.Future
-import scala.concurrent.blocking
+import scala.concurrent.{ ExecutionContext, Future, blocking }
 import scala.util.Success
 import scala.util.control.NonFatal
 
@@ -54,7 +54,7 @@ class ConnectionActor(
 
   import ConnectionActor._
 
-  implicit val executionContext = context.dispatcher
+  implicit val executionContext: ExecutionContext = context.dispatcher
 
   context.system.eventStream.subscribe(self, classOf[DeadLetter])
 
@@ -138,7 +138,7 @@ class ConnectionActor(
 
   whenUnhandled {
     case Event(GetState, _) =>
-      sender ! stateName
+      sender() ! stateName
       stay()
 
     case Event(msg @ DeadLetter(channel: Channel, `self`, child), _) =>

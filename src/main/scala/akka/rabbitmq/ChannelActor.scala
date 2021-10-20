@@ -152,7 +152,7 @@ class ChannelActor(setupChannel: (Channel, ActorRef) => Any)
 
   whenUnhandled {
     case Event(GetState, _) =>
-      sender ! stateName
+      sender() ! stateName
       stay()
   }
 

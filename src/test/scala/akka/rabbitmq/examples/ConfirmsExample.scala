@@ -20,7 +20,7 @@ object ConfirmsExample extends App {
 
   val system = ActorSystem()
 
-  implicit val timeout = Timeout(2.seconds)
+  implicit val timeout: Timeout = Timeout(2.seconds)
   implicit val executionContext: ExecutionContext = system.dispatcher
 
   val queueName = "test-messages"

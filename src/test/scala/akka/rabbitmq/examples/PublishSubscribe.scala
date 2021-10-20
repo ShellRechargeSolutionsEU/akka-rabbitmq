@@ -9,7 +9,7 @@ import concurrent.ExecutionContext.Implicits.global
  * @author Yaroslav Klymko
  */
 object PublishSubscribe extends App {
-  implicit val system = ActorSystem()
+  implicit val system: ActorSystem = ActorSystem()
   val factory = new ConnectionFactory()
   val connection = system.actorOf(ConnectionActor.props(factory), "akka-rabbitmq")
   val exchange = "amq.fanout"
