@@ -20,11 +20,13 @@ object ChannelActor {
   private[rabbitmq] case class InMemory(queue: Queue[OnChannel] = Queue()) extends Data
   private[rabbitmq] case class Connected(channel: Channel) extends Data
 
-  def props(setupChannel: (Channel, ActorRef) => Any = (_, _) => ()): Props =
-    Props(classOf[ChannelActor], setupChannel)
+  def props(setupChannel: (Channel, ActorRef) => Any = (_, _) => ()): Props = {
+    // Props(classOf[ChannelActor], setupChannel)
+    Props(new ChannelActor(setupChannel))
+  }
 
   private[rabbitmq] case class Retrying(retries: Int, onChannel: OnChannel) extends OnChannel {
-    def apply(channel: Channel) = onChannel(channel)
+    def apply(channel: Channel): Any = onChannel(channel)
   }
 }
 

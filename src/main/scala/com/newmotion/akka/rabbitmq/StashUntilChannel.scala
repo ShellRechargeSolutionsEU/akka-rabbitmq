@@ -24,7 +24,7 @@ trait StashUntilChannel {
   def receiveWithChannel(channelActor: ActorRef): Receive
 
   private[rabbitmq] def aroundReceiveWithChannel(channelActor: ActorRef): Receive = {
-    case item @ QueuedMsg(msg, originalSender) =>
+    case QueuedMsg(msg, originalSender) =>
       if (receiveWithChannel(channelActor) isDefinedAt msg)
         receiveWithChannel(channelActor)(msg)
       else
@@ -58,7 +58,7 @@ trait StashUntilChannel {
     createChannel()
   }
 
-  def receive = receiveChannelCreated(Queue())
+  def receive: Receive = receiveChannelCreated(Queue())
 
   override def postStop(): Unit = {
     closeChannel()

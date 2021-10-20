@@ -40,6 +40,6 @@ trait RabbitMqActor extends Actor with ShutdownListener {
 
 sealed trait ShutdownSignal
 case class AmqpShutdownSignal(cause: ShutdownSignalException) extends ShutdownSignal {
-  def appliesTo(x: AnyRef) = cause.getReference eq x
+  def appliesTo(x: AnyRef): Boolean = cause.getReference eq x
 }
 case object ParentShutdownSignal extends ShutdownSignal
