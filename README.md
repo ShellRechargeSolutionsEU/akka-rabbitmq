@@ -183,8 +183,9 @@ You can shutdown `ActorSystem`, this will close all connections as well as chann
 Here is [RabbitMQ Publish/Subscribe](http://www.rabbitmq.com/tutorials/tutorial-three-java.html) in actors style
 
 ```scala
+import akka.actor.ActorSystem
 object PublishSubscribe extends App {
-  implicit val system = ActorSystem()
+  implicit val system: ActorSystem = ActorSystem()
   val factory = new ConnectionFactory()
   val connection = system.actorOf(ConnectionActor.props(factory), "akka-rabbitmq")
   val exchange = "amq.fanout"
@@ -199,7 +200,7 @@ object PublishSubscribe extends App {
     val queue = channel.queueDeclare().getQueue
     channel.queueBind(queue, exchange, "")
     val consumer = new DefaultConsumer(channel) {
-      override def handleDelivery(consumerTag: String, envelope: Envelope, properties: BasicProperties, body: Array[Byte]): Unit = {
+      override def handleDelivery(consumerTag: String, envelope: Envelope, properties: BasicProperties, body: Array[Byte]) = {
         println("received: " + fromBytes(body))
       }
     }
@@ -208,7 +209,7 @@ object PublishSubscribe extends App {
   connection ! CreateChannel(ChannelActor.props(setupSubscriber), Some("subscriber"))
 
   Future {
-     @tailrc
+     @Tailrc
     def loop(n: Long) = {
       val publisher = system.actorSelection("/user/akka-rabbitmq/publisher")
 
