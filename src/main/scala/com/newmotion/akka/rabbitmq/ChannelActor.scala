@@ -86,11 +86,11 @@ class ChannelActor(setupChannel: (Channel, ActorRef) => Any)
             case ProcessSuccess(_) => loop(qs.tail)
             case ProcessFailureRetry(retry) =>
               dropChannelAndRequestNewChannel(channel)
-              stay using InMemory(retry +: qs.tail)
+              stay() using InMemory(retry +: qs.tail)
             case ProcessFailureDrop =>
               log.warning("{} stopped retrying message {}", header(Disconnected, channel), onChannel)
               dropChannelAndRequestNewChannel(channel)
-              stay using InMemory(qs.tail)
+              stay() using InMemory(qs.tail)
           }
       }
 
@@ -110,7 +110,7 @@ class ChannelActor(setupChannel: (Channel, ActorRef) => Any)
         stay()
       } else {
         log.debug("{} queueing message {}", header(Disconnected, msg), onChannel)
-        stay using InMemory(queue enqueue onChannel)
+        stay() using InMemory(queue enqueue onChannel)
       }
 
     case Event(_: ShutdownSignal, _) => stay()
@@ -154,8 +154,8 @@ class ChannelActor(setupChannel: (Channel, ActorRef) => Any)
 
   whenUnhandled {
     case Event(GetState, _) =>
-      sender ! stateName
-      stay
+      sender() ! stateName
+      stay()
   }
 
   onTransition {
