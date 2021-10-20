@@ -12,3 +12,4 @@ target
 .DS_Store
 
 src/test/resources/application.conf
+/.bsp/sbt.json

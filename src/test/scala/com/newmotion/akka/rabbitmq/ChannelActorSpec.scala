@@ -22,7 +22,7 @@ class ChannelActorSpec extends ActorSpec with Mockito {
     }
     "close channel if received unexpectedly" in new TestScope {
       actorRef.setState(Connected, Connected(channel))
-      val newChannel = mock[Channel]
+      val newChannel: Channel = mock[Channel]
       actorRef ! newChannel
       there was one(newChannel).close()
       state mustEqual connected(channel)
@@ -59,7 +59,7 @@ class ChannelActorSpec extends ActorSpec with Mockito {
     }
     "process message if has channel, and when fails and channel is not open and dropIfNoChannel is true, drops the message and reconnects" in new TestScope {
       actorRef.setState(Connected, Connected(closedChannel))
-      actorRef ! ChannelMessage(onChannelFailure, dropIfNoChannel = true)
+      actorRef ! ChannelMessage(onChannelFailure)
       state mustEqual disconnected()
       expectMsg(ProvideChannel)
     }
@@ -68,7 +68,7 @@ class ChannelActorSpec extends ActorSpec with Mockito {
       state mustEqual disconnected(onChannel)
     }
     "drop channel message if no channel and allowed to drop" in new TestScope {
-      actorRef ! ChannelMessage(onChannel, dropIfNoChannel = true)
+      actorRef ! ChannelMessage(onChannel)
       state mustEqual disconnected()
     }
     "leave channel if told by parent" in new TestScope {
@@ -95,7 +95,7 @@ class ChannelActorSpec extends ActorSpec with Mockito {
       state mustEqual connected()
     }
     "process queued channel messages when channel received and failed" in new TestScope {
-      val last = mock[OnChannel]
+      val last: OnChannel = mock[OnChannel]
       actorRef.setState(Disconnected, InMemory(Queue(onChannel, onChannelFailure, last)))
       actorRef ! channel
       there was one(onChannel).apply(channel)
@@ -115,34 +115,34 @@ class ChannelActorSpec extends ActorSpec with Mockito {
   }
 
   private abstract class TestScope extends ActorScope {
-    val setupChannel = mock[(Channel, ActorRef) => Unit]
-    val onChannel = mock[OnChannel]
-    val channel = {
+    val setupChannel: (Channel, ActorRef) => Unit = mock[(Channel, ActorRef) => Unit]
+    val onChannel: OnChannel = mock[OnChannel]
+    val channel: Channel = {
       val channel = mock[Channel]
       channel.isOpen returns true
       channel
     }
-    val closedChannel = {
+    val closedChannel: Channel = {
       val channel = mock[Channel]
       channel.isOpen returns false
       channel
     }
-    val channelShutdownSignal = mock[ShutdownSignalException]
+    val channelShutdownSignal: ShutdownSignalException = mock[ShutdownSignalException]
     channelShutdownSignal.getReference returns channel
 
-    val connectionShutdownSignal = mock[ShutdownSignalException]
+    val connectionShutdownSignal: ShutdownSignalException = mock[ShutdownSignalException]
     connectionShutdownSignal.getReference returns mock[Connection]
 
-    val actorRef = TestFSMRef(new TestChannelActor)
+    val actorRef: TestFSMRef[State, Data, TestChannelActor] = TestFSMRef(new TestChannelActor)
 
-    def actor = actorRef.underlyingActor.asInstanceOf[ChannelActor]
+    def actor: ChannelActor = actorRef.underlyingActor.asInstanceOf[ChannelActor]
     def state: (State, Data) = actorRef.stateName -> actorRef.stateData
-    def disconnected(xs: OnChannel*) = Disconnected -> InMemory(Queue(xs: _*))
-    def connected(x: Channel = channel) = Connected -> Connected(x)
-    val onChannelFailure: Channel => Any = { channel => throw new IOException() }
+    def disconnected(xs: OnChannel*): (ChannelActor.Disconnected.type, InMemory) = Disconnected -> InMemory(Queue(xs: _*))
+    def connected(x: Channel = channel): (ChannelActor.Connected.type, Connected) = Connected -> Connected(x)
+    val onChannelFailure: Channel => Any = { _ => throw new IOException() }
 
     class TestChannelActor extends ChannelActor(setupChannel) {
-      override def connectionActor = testActor
+      override def connectionActor: ActorRef = testActor
     }
   }
 }

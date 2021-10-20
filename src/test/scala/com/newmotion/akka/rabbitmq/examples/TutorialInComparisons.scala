@@ -10,13 +10,13 @@ import scala.concurrent.duration._
  */
 class TutorialInComparisons(implicit system: ActorSystem) {
 
-  val connection = {
+  val connection: Connection = {
     val factory = new ConnectionFactory()
     val connection: Connection = factory.newConnection()
     connection
   }
 
-  val connectionActor = {
+  val connectionActor: ActorRef = {
     val factory = new ConnectionFactory()
     val connectionActor: ActorRef = system.actorOf(ConnectionActor.props(factory))
 
@@ -28,12 +28,12 @@ class TutorialInComparisons(implicit system: ActorSystem) {
     connectionActor
   }
 
-  val channel = {
+  val channel: Channel = {
     val channel: Channel = connection.createChannel()
     channel
   }
 
-  val channelActor = {
+  val channelActor: ActorRef = {
     val channelActor: ActorRef = connectionActor.createChannel(ChannelActor.props())
 
     connectionActor.createChannel(ChannelActor.props(), Some("my-channel"))
@@ -41,7 +41,7 @@ class TutorialInComparisons(implicit system: ActorSystem) {
     connectionActor ! CreateChannel(ChannelActor.props())
 
     connectionActor.createChannel(Props(new Actor {
-      def receive = {
+      def receive: Receive = {
         case channel: Channel =>
       }
     }))

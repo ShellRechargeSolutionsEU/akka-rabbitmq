@@ -5,6 +5,7 @@ import akka.testkit.TestFSMRef
 import akka.actor.{ ActorRef, Props }
 import ConnectionActor._
 import com.rabbitmq.client.{ ShutdownListener, ShutdownSignalException }
+import org.mockito.InOrder
 
 import scala.concurrent.duration._
 import scala.collection.immutable.Iterable
@@ -20,7 +21,7 @@ class ConnectionActorSpec extends ActorSpec with Mockito {
     "try to connect on startup" in new TestScope {
       actorRef ! Connect
       state mustEqual connectedAfterRecovery
-      val order = inOrder(factory, recoveredConnection, setup)
+      val order: Option[InOrder] = inOrder(factory, recoveredConnection, setup)
       there was one(factory).newConnection()
       there was one(recoveredConnection).addShutdownListener(any[ShutdownListener])
       there was one(setup).apply(recoveredConnection, actorRef)
@@ -149,16 +150,16 @@ class ConnectionActorSpec extends ActorSpec with Mockito {
     }
 
     "create only one channel when reconnecting" in new TestScopeBase {
-      override val reconnectionDelay = FiniteDuration(0, SECONDS)
+      override val reconnectionDelay: FiniteDuration = FiniteDuration(0, SECONDS)
 
-      val setupChannel = mock[(Channel, ActorRef) => Unit]
-      val createChannel = CreateChannel(ChannelActor.props(setupChannel))
+      val setupChannel: (Channel, ActorRef) => Unit = mock[(Channel, ActorRef) => Unit]
+      val createChannel: CreateChannel = CreateChannel(ChannelActor.props(setupChannel))
 
       class TestConnectionActor extends ConnectionActor(factory, reconnectionDelay, setup) {
         override def preStart(): Unit = {}
       }
 
-      val connectionActorRef = TestFSMRef(new TestConnectionActor)
+      val connectionActorRef: TestFSMRef[State, Data, TestConnectionActor] = TestFSMRef(new TestConnectionActor)
 
       connectionActorRef.setState(Connected, Connected(initialConnection))
       connectionActorRef ! createChannel
@@ -172,44 +173,44 @@ class ConnectionActorSpec extends ActorSpec with Mockito {
 
   private abstract class TestScope extends TestScopeBase {
     class TestConnectionActor extends ConnectionActor(factory, reconnectionDelay, setup) {
-      override def children = Iterable(testActor)
-      override def newChild(props: Props, name: Option[String]) = testActor
+      override def children: Iterable[ActorRef] = Iterable(testActor)
+      override def newChild(props: Props, name: Option[String]): ActorRef = testActor
       override def preStart(): Unit = {}
     }
 
-    val actorRef = TestFSMRef(new TestConnectionActor)
+    val actorRef: TestFSMRef[State, Data, TestConnectionActor] = TestFSMRef(new TestConnectionActor)
 
-    def actor = actorRef.underlyingActor.asInstanceOf[ConnectionActor]
+    def actor: ConnectionActor = actorRef.underlyingActor.asInstanceOf[ConnectionActor]
     def state: (State, Data) = actorRef.stateName -> actorRef.stateData
   }
 
   private abstract class TestScopeBase extends ActorScope {
-    val channel = mock[Channel]
+    val channel: Channel = mock[Channel]
 
-    def createMockConnection() = {
+    def createMockConnection(): Connection = {
       val connection = mock[Connection]
       connection.isOpen returns true
       connection.createChannel() returns channel
       connection
     }
 
-    val initialConnection = createMockConnection()
-    val recoveredConnection = createMockConnection()
+    val initialConnection: Connection = createMockConnection()
+    val recoveredConnection: Connection = createMockConnection()
 
-    val factory = {
+    val factory: ConnectionFactory = {
       val factory = mock[ConnectionFactory]
       factory.newConnection() returns recoveredConnection
       factory
     }
-    val create = CreateChannel(null)
-    val reconnectionDelay = FiniteDuration(1, SECONDS)
-    val setup = mock[(Connection, ActorRef) => Any]
+    val create: CreateChannel = CreateChannel(null)
+    val reconnectionDelay: FiniteDuration = FiniteDuration(1, SECONDS)
+    val setup: (Connection, ActorRef) => Any = mock[(Connection, ActorRef) => Any]
 
-    def disconnected = Disconnected -> NoConnection
-    def connectedInitially = Connected -> Connected(initialConnection)
-    def connectedAfterRecovery = Connected -> Connected(recoveredConnection)
+    def disconnected: (ConnectionActor.Disconnected.type, ConnectionActor.NoConnection.type) = Disconnected -> NoConnection
+    def connectedInitially: (ConnectionActor.Connected.type, Connected) = Connected -> Connected(initialConnection)
+    def connectedAfterRecovery: (ConnectionActor.Connected.type, Connected) = Connected -> Connected(recoveredConnection)
 
-    def shutdownSignal(initiatedByApplication: Boolean = false, reference: AnyRef = initialConnection) = {
+    def shutdownSignal(initiatedByApplication: Boolean = false, reference: AnyRef = initialConnection): ShutdownSignalException = {
       val shutdownSignal = mock[ShutdownSignalException]
       shutdownSignal.isInitiatedByApplication returns initiatedByApplication
       shutdownSignal.getReference returns reference

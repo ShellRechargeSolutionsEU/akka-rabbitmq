@@ -20,7 +20,7 @@ object ConfirmsExample extends App {
 
   val system = ActorSystem()
 
-  implicit val timeout = Timeout(2.seconds)
+  implicit val timeout: Timeout = Timeout(2.seconds)
   implicit val executionContext: ExecutionContext = system.dispatcher
 
   val queueName = "test-messages"
@@ -36,7 +36,7 @@ object ConfirmsExample extends App {
   val pubConnActor = system.actorOf(ConnectionActor.props(connFactory), "publisher-connection")
 
   /* Method to be used by the publishing ChannelActor to set up the channel */
-  def setupConfirmingPublisher(ch: Channel, self: ActorRef) = {
+  def setupConfirmingPublisher(ch: Channel, self: ActorRef): Unit = {
     ch.queueDeclare(queueName, true, false, true, null)
     ch.confirmSelect()
     ch.addConfirmListener(confirmListener)
@@ -45,7 +45,7 @@ object ConfirmsExample extends App {
 
   /* Tries to publish the given message to RabbitMQ and stores the message ID RabbitMQ will use to confirm it received
    * the message */
-  def tryPublish(ch: Channel, message: String) = {
+  def tryPublish(ch: Channel, message: String): Unit = {
     val seqNo = ch.getNextPublishSeqNo
     ch.basicPublish("", queueName, MessageProperties.PERSISTENT_BASIC, message.getBytes("UTF-8"))
     unconfirmed += seqNo
@@ -55,7 +55,7 @@ object ConfirmsExample extends App {
   (pubConnActor ? CreateChannel(ChannelActor.props(setupConfirmingPublisher), Some("channel"))).mapTo[ChannelCreated] map {
     case ChannelCreated(chActor) =>
       System.out.println("Publisher channel created")
-      system.scheduler.schedule(0.seconds, 2.millis, chActor, ChannelMessage {
+      system.scheduler.scheduleWithFixedDelay(0.seconds, 2.millis, chActor, ChannelMessage {
         ch =>
           tryPublish(ch, "nop")
       })
@@ -65,7 +65,7 @@ object ConfirmsExample extends App {
 
   /* A ConfirmListener that will be called every time RabbitMQ confirms that it received one or more of our messages */
   val confirmListener = new ConfirmListener {
-    override def handleAck(seqNo: Long, multiple: Boolean) =
+    override def handleAck(seqNo: Long, multiple: Boolean): Unit =
       if (!multiple) {
         System.out.println(s"Message with ID $seqNo acknowledged")
         unconfirmed -= seqNo
@@ -78,7 +78,7 @@ object ConfirmsExample extends App {
 
     // RabbitMQ documentation is itself unclear here on the meaning of the 'multiple' parameter, but we
     // can be conservative and see all messages up to N as not confirmed if message N gets NACK'ed.
-    override def handleNack(seqNo: Long, multiple: Boolean) = {
+    override def handleNack(seqNo: Long, multiple: Boolean): Unit = {
       System.out.println(s"Message(s) with ID(s up to) $seqNo not handled")
       confirmedUpTo = seqNo
     }
