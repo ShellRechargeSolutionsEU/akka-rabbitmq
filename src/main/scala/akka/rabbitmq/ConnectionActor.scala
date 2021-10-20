@@ -85,7 +85,7 @@ class ConnectionActor(
     case Event(msg @ CreateChannel(props, name), _) =>
       val child = newChild(props, name)
       log.debug("{} creating child {} in disconnected state", header(Disconnected, msg), child)
-      stay replying ChannelCreated(child)
+      stay() replying ChannelCreated(child)
 
     case Event(_: AmqpShutdownSignal, _) => stay()
 
@@ -125,7 +125,7 @@ class ConnectionActor(
     case Event(msg @ CreateChannel(props, name), Connected(connection)) =>
       val child = newChild(props, name)
       provideChannel(connection, child, msg)
-      stay replying ChannelCreated(child)
+      stay() replying ChannelCreated(child)
 
     case Event(msg @ AmqpShutdownSignal(cause), Connected(connection)) =>
       // It is important that we check if a shutdown signal pertains to the current connection.
