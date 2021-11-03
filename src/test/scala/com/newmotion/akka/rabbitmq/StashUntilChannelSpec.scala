@@ -19,7 +19,7 @@ class StashUntilChannelSpec extends ActorSpec {
     }
 
     "stop channel on stop" in new TestScope {
-      val probe = TestProbe()
+      val probe: TestProbe = TestProbe()
       probe watch testActor
       actor ! ChannelCreated(testActor)
       actor.stop()
@@ -29,7 +29,7 @@ class StashUntilChannelSpec extends ActorSpec {
     }
 
     "process messages that came in when there was no channel as soon as a channel is set up" in new TestScope {
-      val commandSender = TestProbe()
+      val commandSender: TestProbe = TestProbe()
       commandSender.send(actor, Command)
 
       actor ! ChannelCreated(testActor)
@@ -40,13 +40,13 @@ class StashUntilChannelSpec extends ActorSpec {
     "process messages that came in when there was no channel before any message that came in after the CreateChannel" in new TestScope {
       val numMessagesBeforeChannelCreated = 4000
       class OrderTestStashUntil extends Actor with StashUntilChannel {
-        def connectionActor = connectionProbe.ref
-        def receiveWithChannel(channelActor: ActorRef) = {
+        def connectionActor: ActorRef = connectionProbe.ref
+        def receiveWithChannel(channelActor: ActorRef): Receive = {
           case msg: Integer => sender() ! msg
         }
       }
       // we cannot use TestActorRef here because TestActorRef processes messages synchronously
-      val orderTestActor = system.actorOf(Props(new OrderTestStashUntil))
+      val orderTestActor: ActorRef = system.actorOf(Props(new OrderTestStashUntil))
 
       1.to(numMessagesBeforeChannelCreated).foreach(n => orderTestActor ! n)
       orderTestActor ! ChannelCreated(testActor)
@@ -57,16 +57,16 @@ class StashUntilChannelSpec extends ActorSpec {
   }
 
   abstract class TestScope extends ActorScope {
-    val connectionProbe = TestProbe()
-    val actor = TestActorRef(new TestStashUntil)
+    val connectionProbe: TestProbe = TestProbe()
+    val actor: TestActorRef[TestStashUntil] = TestActorRef(new TestStashUntil)
 
     object Command
     case class Reply(channelActor: ActorRef)
 
     class TestStashUntil extends Actor with StashUntilChannel {
-      def connectionActor = connectionProbe.ref
-      def receiveWithChannel(channelActor: ActorRef) = {
-        case Command => sender ! Reply(channelActor)
+      def connectionActor: ActorRef = connectionProbe.ref
+      def receiveWithChannel(channelActor: ActorRef): Receive = {
+        case Command => sender() ! Reply(channelActor)
       }
     }
   }

@@ -7,9 +7,9 @@ import akka.actor.ActorSystem
 import akka.testkit.{ ImplicitSender, TestKit }
 
 abstract class ActorSpec extends Specification {
-  implicit val system = ActorSystem()
+  implicit val system: ActorSystem = ActorSystem()
 
-  override def map(fs: => Fragments) = super.map(fs) ^ step(TestKit.shutdownActorSystem(system))
+  override def map(fs: => Fragments): Fragments = super.map(fs) ^ step(TestKit.shutdownActorSystem(system))
 
   abstract class ActorScope extends TestKit(system) with ImplicitSender with Scope
 }

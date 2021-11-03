@@ -1,9 +1,9 @@
 package com.newmotion.akka.rabbitmq
 
-import akka.actor.{ ActorRef, DeadLetter, Props, FSM }
+import akka.actor.{ ActorRef, DeadLetter, FSM, Props }
+
 import concurrent.duration._
-import scala.concurrent.Future
-import scala.concurrent.blocking
+import scala.concurrent.{ ExecutionContext, ExecutionContextExecutor, Future, blocking }
 import scala.util.Success
 import scala.util.control.NonFatal
 
@@ -42,7 +42,7 @@ object ConnectionActor {
     reconnectionDelay: FiniteDuration = 10.seconds,
     setupConnection: (Connection, ActorRef) => Any = (_, _) => (),
     dispatcher: String = DefaultDispatcherId): Props =
-    Props(classOf[ConnectionActor], factory, reconnectionDelay, setupConnection)
+    Props(new ConnectionActor(factory, reconnectionDelay, setupConnection))
       .withDispatcher(dispatcher)
 }
 
@@ -54,7 +54,7 @@ class ConnectionActor(
 
   import ConnectionActor._
 
-  implicit val executionContext = context.dispatcher
+  implicit val executionContext: ExecutionContext = context.dispatcher
 
   context.system.eventStream.subscribe(self, classOf[DeadLetter])
 
@@ -73,7 +73,8 @@ class ConnectionActor(
           log.error(
             "{} can't connect to {}, retrying in {}",
             header(Disconnected, Connect), factory.uri, reconnectionDelay)
-          setTimer(reconnectTimer, Connect, reconnectionDelay, repeat = false)
+          startSingleTimer(reconnectTimer, Connect, reconnectionDelay)
+
       }
       stay()
 
@@ -85,7 +86,7 @@ class ConnectionActor(
     case Event(msg @ CreateChannel(props, name), _) =>
       val child = newChild(props, name)
       log.debug("{} creating child {} in disconnected state", header(Disconnected, msg), child)
-      stay replying ChannelCreated(child)
+      stay() replying ChannelCreated(child)
 
     case Event(_: AmqpShutdownSignal, _) => stay()
 
@@ -125,7 +126,7 @@ class ConnectionActor(
     case Event(msg @ CreateChannel(props, name), Connected(connection)) =>
       val child = newChild(props, name)
       provideChannel(connection, child, msg)
-      stay replying ChannelCreated(child)
+      stay() replying ChannelCreated(child)
 
     case Event(msg @ AmqpShutdownSignal(cause), Connected(connection)) =>
       // It is important that we check if a shutdown signal pertains to the current connection.
@@ -138,7 +139,7 @@ class ConnectionActor(
 
   whenUnhandled {
     case Event(GetState, _) =>
-      sender ! stateName
+      sender() ! stateName
       stay()
 
     case Event(msg @ DeadLetter(channel: Channel, `self`, child), _) =>
@@ -163,8 +164,8 @@ class ConnectionActor(
 
   initialize()
 
-  private def reconnect(connection: Connection, msg: Any) = {
-    def dropConnectionAndNotifyChildren() = {
+  private def reconnect(connection: Connection, msg: Any): Unit = {
+    def dropConnectionAndNotifyChildren(): Unit = {
       log.debug("{} closing broken connection {}", header(Connected, msg), connection)
       close(connection)
 
@@ -174,7 +175,7 @@ class ConnectionActor(
 
     dropConnectionAndNotifyChildren()
     log.info("{} reconnecting to {} in {}", header(Connected, msg), factory.uri, reconnectionDelay)
-    setTimer(reconnectTimer, Connect, reconnectionDelay, repeat = false)
+    startSingleTimer(reconnectTimer, Connect, reconnectionDelay)
   }
 
   /**

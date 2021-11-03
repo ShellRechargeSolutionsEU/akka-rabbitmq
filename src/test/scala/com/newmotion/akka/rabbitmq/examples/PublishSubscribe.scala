@@ -2,14 +2,16 @@ package com.newmotion.akka.rabbitmq
 package examples
 
 import akka.actor.{ ActorRef, ActorSystem }
+
 import concurrent.Future
 import concurrent.ExecutionContext.Implicits.global
+import scala.annotation.tailrec
 
 /**
  * @author Yaroslav Klymko
  */
 object PublishSubscribe extends App {
-  implicit val system = ActorSystem()
+  implicit val system: ActorSystem = ActorSystem()
   val factory = new ConnectionFactory()
   val connection = system.actorOf(ConnectionActor.props(factory), "akka-rabbitmq")
   val exchange = "amq.fanout"
@@ -33,6 +35,7 @@ object PublishSubscribe extends App {
   connection ! CreateChannel(ChannelActor.props(setupSubscriber), Some("subscriber"))
 
   Future {
+    @tailrec
     def loop(n: Long): Unit = {
       val publisher = system.actorSelection("/user/rabbitmq/publisher")
 
