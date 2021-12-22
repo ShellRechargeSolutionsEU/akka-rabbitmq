@@ -21,4 +21,24 @@ libraryDependencies ++= Seq(
   ("org.specs2" %% "specs2-mock" % "4.13.1" % Test).cross(CrossVersion.for3Use2_13)
 )
 
+val scalaReleaseVersion = SettingKey[Int]("scalaReleaseVersion")
+scalaReleaseVersion := {
+  val v = scalaVersion.value
+  CrossVersion.partialVersion(v).map(_._1.toInt).getOrElse {
+    throw new RuntimeException(s"could not get Scala release version from $v")
+  }
+}
+
+Test / unmanagedSourceDirectories ++= {
+  if (scalaReleaseVersion.value > 2) {
+    Seq(
+      (LocalRootProject / baseDirectory).value / "src" / "test" / "scala-3"
+    )
+  } else {
+    Seq(
+      (LocalRootProject / baseDirectory).value / "src" / "test" / s"scala-2"
+    )
+  }
+}
+
 Format.settings

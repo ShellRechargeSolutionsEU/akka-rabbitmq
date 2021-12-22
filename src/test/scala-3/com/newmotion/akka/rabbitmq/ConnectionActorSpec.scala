@@ -7,9 +7,10 @@ import ConnectionActor._
 import com.rabbitmq.client.{ ShutdownListener, ShutdownSignalException }
 import org.mockito.InOrder
 
+import java.io.IOException
 import scala.concurrent.duration._
 import scala.collection.immutable.Iterable
-import java.io.IOException
+import scala.reflect.ClassTag
 
 /**
  * @author Yaroslav Klymko
@@ -152,7 +153,7 @@ class ConnectionActorSpec extends ActorSpec with Mockito {
     "create only one channel when reconnecting" in new TestScopeBase {
       override val reconnectionDelay: FiniteDuration = FiniteDuration(0, SECONDS)
 
-      val setupChannel: (Channel, ActorRef) => Unit = mock[(Channel, ActorRef) => Unit]
+      val setupChannel: (Channel, ActorRef) => Unit = mock[(Channel, ActorRef) => Unit](ClassTag(classOf[(Channel, ActorRef) => Unit]))
       val createChannel: CreateChannel = CreateChannel(ChannelActor.props(setupChannel))
 
       class TestConnectionActor extends ConnectionActor(factory, reconnectionDelay, setup) {
@@ -204,7 +205,7 @@ class ConnectionActorSpec extends ActorSpec with Mockito {
     }
     val create: CreateChannel = CreateChannel(null)
     val reconnectionDelay: FiniteDuration = FiniteDuration(1, SECONDS)
-    val setup: (Connection, ActorRef) => Any = mock[(Connection, ActorRef) => Any]
+    val setup: (Connection, ActorRef) => Any = mock[(Connection, ActorRef) => Any](ClassTag(classOf[(Connection, ActorRef) => Any]))
 
     def disconnected: (ConnectionActor.Disconnected.type, ConnectionActor.NoConnection.type) = Disconnected -> NoConnection
     def connectedInitially: (ConnectionActor.Connected.type, Connected) = Connected -> Connected(initialConnection)

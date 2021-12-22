@@ -5,6 +5,7 @@ import akka.testkit.TestFSMRef
 import akka.actor.ActorRef
 import ChannelActor._
 import com.rabbitmq.client.ShutdownSignalException
+
 import collection.immutable.Queue
 import java.io.IOException
 import ConnectionActor.ProvideChannel
